@@ -25,6 +25,7 @@ public final class Specs {
             .setBasePath(ConfigProvider.CONFIG.apiVersion())
             .setContentType(ContentType.JSON)
             .addHeader("Authorization", "Bearer " + ConfigProvider.CONFIG.apiToken())
+            .addFilter(new RetryOnServerErrorFilter(3, 1000))
             .addFilter(allureFilter())
             .log(LogDetail.ALL)
             .build();
