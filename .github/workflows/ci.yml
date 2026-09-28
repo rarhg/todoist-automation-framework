@@ -112,7 +112,18 @@ jobs:
       - name: Запуск :web:test
         env:
           AUTH_STATE_JSON: ${{ secrets.AUTH_STATE_JSON }}
-        run: ./gradlew :web:test
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: ./gradlew :web:test "-Dapi.token=$API_TOKEN"
+
+      - name: Скрыть токен в результатах Allure
+        if: always()
+        env:
+          API_TOKEN: ${{ secrets.API_TOKEN }}
+        run: |
+          if [ -n "$API_TOKEN" ]; then
+            grep -rIlF "$API_TOKEN" allure-results web/build/allure-results 2>/dev/null \
+              | xargs -r sed -i "s|$API_TOKEN|***|g" || true
+          fi
 
       - name: Сохранить результаты Allure
         if: always()
