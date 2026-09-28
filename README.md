@@ -1,7 +1,7 @@
 # Todoist QA Automation
 
-[![CI](https://github.com/<ваш-ник>/<репозиторий>/actions/workflows/ci.yml/badge.svg)](https://github.com/<ваш-ник>/<репозиторий>/actions/workflows/ci.yml)
-[![Allure Report](https://img.shields.io/badge/Allure-report-orange)](https://<ваш-ник>.github.io/<репозиторий>/)
+[![CI](https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml)
+[![Allure Report](https://img.shields.io/badge/Allure-report-orange)](https://rarhg.github.io/todoist-automation-framework/)
 
 Дипломный проект по автоматизации тестирования [Todoist](https://todoist.com): API, Web, Mobile (Android) и слой БД в одном Gradle-монорепозитории с единым Allure-отчётом.
 
@@ -107,7 +107,29 @@ bs.app.url=...
 
 - Android-устройство или эмулятор с русской локалью (тесты используют русские тексты интерфейса).
 - Установленный Appium с драйвером UiAutomator2 и Android SDK (путь в `android.sdk.home`).
-- APK Todoist. Путь задаётся ключом `local.apk.path`; APK ставится при запуске с флагом `-Dclean.install=true`, иначе используется уже установленное приложение.
+- APK Todoist. В репозитории его нет намеренно (проприетарный бинарник стороннего
+  приложения, раздувает историю git и не нужен для сборки/CI). Получить его можно
+  с собственного устройства, где приложение уже установлено через Google Play:
+
+  ```
+  adb shell pm path com.todoist
+  ```
+
+  Команда вернёт список сплитов (base.apk + config-сплиты под архитектуру/локаль/
+  плотность экрана), например:
+  ```
+  package:/data/app/~~xxxx==/com.todoist-yyyy==/base.apk
+  package:/data/app/~~xxxx==/com.todoist-yyyy==/split_config.ru.apk
+  package:/data/app/~~xxxx==/com.todoist-yyyy==/split_config.arm64_v8a.apk
+  ```
+
+  Каждый пулните на диск (`adb pull <путь>`), затем соберите сплиты в единый
+  устанавливаемый APK (например, инструментом APKEditor: `merge`). Готовый файл
+  положите в `mobile/src/test/resources/apps/todoist.apk` — этот путь читается
+  из `local.apk.path` в `common.properties` и используется только при запуске
+  с флагом `-Dclean.install=true`; по умолчанию тесты используют уже
+  установленное на устройстве приложение и APK не требуется вовсе.
+- Путь задаётся ключом `local.apk.path`; APK ставится при запуске с флагом `-Dclean.install=true`, иначе используется уже установленное приложение.
 - Для `:mobile:android` — аккаунт BrowserStack и ключи `bs.*` в `local.properties`.
 
 ### Отчёт Allure
@@ -118,7 +140,7 @@ bs.app.url=...
 ./gradlew allureServe
 ```
 
-Отчёт последнего прогона в CI: https://<ваш-ник>.github.io/<репозиторий>/
+Отчёт последнего прогона в CI: https://rarhg.github.io/todoist-automation-framework/
 
 ## CI
 
@@ -130,7 +152,7 @@ GitHub Actions (`.github/workflows/ci.yml`) запускает модули `api
 
 ## Принятые решения
 
-**Монорепозиторий.** API, Web, Mobile и DB лежат в одном репозитории с общей конфигурацией и единым отчётом вместо трёх отдельных репозиториев.
+**Монорепозиторий.** API, Web, Mobile и DB лежат в одном репозитории с общей конфигурацией и единым отчётом.
 
 **WireMock и тег `live`.** Основная часть API-тестов идёт на WireMock: они быстрые и не зависят от внешнего сервиса. Проверка авторизации (`AuthApiTest`, теги `api` и `live`) сделана на реальном API, потому что мок вернул бы 401 просто потому, что так настроен.
 
@@ -144,4 +166,3 @@ GitHub Actions (`.github/workflows/ci.yml`) запускает модули `api
 
 ## Ручное тестирование
 
-<!-- Заполните после создания модуля/папки manual: ссылка на чек-лист, тест-кейсы и баг-репорты -->
