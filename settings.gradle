@@ -1,0 +1,3 @@
+rootProject.name = 'todoist-qa-automation'
+
+include 'common', 'api', 'web', 'mobile', 'db'

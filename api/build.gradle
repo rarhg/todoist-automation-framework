@@ -1,0 +1,20 @@
+apply plugin: 'java-library'
+
+dependencies {
+    api project(':common')
+
+    api "io.rest-assured:rest-assured:$restAssuredVersion"
+    api "io.rest-assured:json-schema-validator:$restAssuredVersion"
+    api "io.qameta.allure:allure-rest-assured:$allureVersion"
+
+    implementation "org.wiremock:wiremock:$wiremockVersion"
+}
+
+test {
+    systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
+    systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+    systemProperty 'junit.jupiter.execution.parallel.mode.classes.default', 'concurrent'
+    systemProperty 'junit.jupiter.execution.parallel.config.strategy', 'fixed'
+    systemProperty 'junit.jupiter.execution.parallel.config.fixed.parallelism', '6'
+    systemProperty 'junit.jupiter.execution.parallel.config.fixed.max-pool-size', '6'
+}

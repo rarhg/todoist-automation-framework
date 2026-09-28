@@ -1,0 +1,13 @@
+# Тестовый аккаунт Todoist
+api.token=YOUR_API_TOKEN_HERE
+test.email=YOUR_EMAIL_HERE
+test.password=YOUR_PASSWORD_HERE
+
+# BrowserStack (gradlew android)
+bs.username=YOUR_BROWSERSTACK_USERNAME
+bs.access.key=YOUR_BROWSERSTACK_ACCESS_KEY
+bs.app.url=YOUR_BROWSERSTACK_APP_URL
+
+# Локальное Android-устройство (gradlew androidLocal)
+local.device.name=YOUR_DEVICE_OR_EMULATOR_NAME
+android.sdk.home=YOUR_ANDROID_SDK_PATH

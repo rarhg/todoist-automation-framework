@@ -1,0 +1,12 @@
+.gradle/
+build/
+.idea/
+*.iml
+out/
+allure-results/
+allure-report/
+src/test/resources/todoist.config.properties
+local.properties
+web/auth-state.json
+common/src/main/resources/config/local.properties
+*.apk

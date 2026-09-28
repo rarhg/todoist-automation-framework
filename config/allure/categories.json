@@ -1,0 +1,25 @@
+[
+  {
+    "name": "Дефекты продукта",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Проблема окружения / тестовых данных",
+    "matchedStatuses": ["broken"],
+    "traceRegex": ".*IllegalStateException.*"
+  },
+  {
+    "name": "Хрупкость UI-локаторов",
+    "matchedStatuses": ["broken"],
+    "traceRegex": ".*(NoSuchElementException|TimeoutException|StaleElementReferenceException|ElementNotInteractableException).*"
+  },
+  {
+    "name": "Ошибки инфраструктуры (сеть/сессия/сервер)",
+    "matchedStatuses": ["broken"],
+    "traceRegex": ".*(ConnectException|SocketTimeoutException|WebDriverException|SessionNotCreatedException).*"
+  },
+  {
+    "name": "Тесты без реализации / пропущены",
+    "matchedStatuses": ["skipped"]
+  }
+]

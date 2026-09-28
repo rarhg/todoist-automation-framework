@@ -1,0 +1,88 @@
+plugins {
+    id 'java'
+    id 'io.qameta.allure' version '4.1.0' apply false
+    id "io.freefair.lombok" version "8.6" apply false
+}
+
+allprojects {
+    group = 'ru.diploma'
+    version = '1.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+task copyAllureConfig(type: Copy) {
+    from "$rootDir/config/allure"
+    into "$rootDir/allure-results"
+    include "categories.json", "environment.properties"
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'io.qameta.allure'
+    apply plugin: 'io.freefair.lombok'
+
+    ext {
+        selenideVersion = "7.3.0"
+        restAssuredVersion = "5.4.0"
+        allureVersion = "2.27.0"
+        junitVersion = "5.10.2"
+        dataFakerVersion = "2.2.2"
+        slf4jVersion = "2.0.13"
+        appiumVersion = "9.2.2"
+        testcontainersVersion = "1.21.4"
+        wiremockVersion = "3.5.4"
+    }
+
+    allure {
+        report {
+            version.set(allureVersion)
+        }
+        adapter {
+            aspectjWeaver.set(true)
+            frameworks {
+                junit5 {
+                    adapterVersion.set(allureVersion)
+                }
+            }
+        }
+    }
+
+    dependencies {
+        testImplementation "org.junit.jupiter:junit-jupiter:$junitVersion"
+        testImplementation "org.slf4j:slf4j-simple:$slf4jVersion"
+        testImplementation "org.slf4j:slf4j-api:$slf4jVersion"
+        testImplementation "net.datafaker:datafaker:$dataFakerVersion"
+        testImplementation "org.assertj:assertj-core:3.25.3"
+        testImplementation "commons-io:commons-io:2.16.1"
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    tasks.withType(Test).configureEach {
+        systemProperty "file.encoding", "UTF-8"
+
+        def forwarded = ['web.', 'browser', 'is.remote', 'remote.url', 'api.', 'test.', 'auth.state.file']
+        System.properties.each { k, v ->
+            if (forwarded.any { k.toString().startsWith(it) }) {
+                systemProperty k.toString(), v
+            }
+        }
+
+        finalizedBy rootProject.tasks.named('copyAllureConfig')
+        testLogging {
+            lifecycle {
+                events "started", "skipped", "failed", "standard_error", "standard_out"
+                exceptionFormat "short"
+            }
+        }
+    }
+
+    tasks.matching { it.name == 'test' }.configureEach {
+        useJUnitPlatform()
+    }
+}
