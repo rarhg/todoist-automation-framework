@@ -92,9 +92,42 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
 
+  web:
+    name: Web-тесты (Selenide)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Права на gradlew
+        run: chmod +x ./gradlew
+
+      - name: Запуск :web:test
+        env:
+          AUTH_STATE_JSON: ${{ secrets.AUTH_STATE_JSON }}
+        run: ./gradlew :web:test
+
+      - name: Сохранить результаты Allure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-web
+          path: |
+            allure-results
+            web/build/allure-results
+          if-no-files-found: warn
+          retention-days: 7
+
   report:
     name: Allure-отчёт на GitHub Pages
-    needs: [api, db]
+    needs: [api, db, web]
     # Публикуем даже если тесты упали, но не для pull request
     if: always() && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
