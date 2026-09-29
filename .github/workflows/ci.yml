@@ -132,10 +132,16 @@ jobs:
 
   report:
     name: Allure-отчёт на GitHub Pages
-    needs: [api, db, web]
-    if: always() && github.event_name != 'pull_request'
+    needs: [ api, db, web ]
+    if: |
+      always() && 
+      github.event_name != 'pull_request' && 
+      (needs.api.result == 'success' || needs.api.result == 'failure') &&
+      (needs.db.result == 'success' || needs.db.result == 'failure') &&
+      (needs.web.result == 'success' || needs.web.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     permissions:
       pages: write
       id-token: write
