@@ -1,0 +1,16 @@
+{
+  "telegram": {
+    "token": "TOKEN_WILL_BE_REPLACED_IN_CI",
+    "chat": "CHAT_ID_WILL_BE_REPLACED_IN_CI",
+    "replyTo": ""
+  },
+  "studio": {
+    "project": "Todoist QA Automation",
+    "environment": "GitHub Actions",
+    "comment": "Сборка завершена",
+    "reportLink": "https://github.io",
+    "language": "ru"
+  },
+  "allureFolder": "allure-report",
+  "enableChart": true
+}
