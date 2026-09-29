@@ -8,13 +8,8 @@
     "logo": "https://qameta.io",
     "allureFolder": "./allure-report",
     "enableChart": true,
-    "collage": {
-      "hidden": [
-        "suites",
-        "durations",
-        "categories",
-        "features"
-      ]
+    "chart": {
+      "mode": "pie"
     }
   },
   "telegram": {
