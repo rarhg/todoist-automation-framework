@@ -7,7 +7,15 @@
     "language": "ru",
     "logo": "https://qameta.io",
     "allureFolder": "./allure-report",
-    "enableChart": true
+    "enableChart": true,
+    "collage": {
+      "hidden": [
+        "suites",
+        "durations",
+        "categories",
+        "features"
+      ]
+    }
   },
   "telegram": {
     "token": "TOKEN_WILL_BE_REPLACED_IN_CI",
