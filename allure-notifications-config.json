@@ -6,7 +6,7 @@
     "reportLink": "https://github.io",
     "language": "ru",
     "logo": "https://qameta.io",
-    "allureFolder": "allure-report",
+    "allureFolder": "./allure-report",
     "enableChart": true
   },
   "telegram": {
