@@ -9,7 +9,17 @@
     "allureFolder": "./allure-report",
     "enableChart": true,
     "chart": {
-      "mode": "pie"
+      "mode": "collage",
+      "layout": "free",
+      "items": [
+        {
+          "type": "chart",
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 100
+        }
+      ]
     }
   },
   "telegram": {
