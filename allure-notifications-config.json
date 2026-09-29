@@ -9,7 +9,11 @@
     "environment": "GitHub Actions",
     "comment": "Сборка завершена",
     "reportLink": "https://github.io",
-    "language": "ru"
+    "language": "ru",
+    "base": {
+      "logo": "https://qameta.io",
+      "title": "Allure Report"
+    }
   },
   "allureFolder": "allure-report",
   "enableChart": true

@@ -76,11 +76,7 @@ jobs:
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |
-          if [ -n "$API_TOKEN" ]; then
-            grep -rIlF "$API_TOKEN" allure-results db/build/allure-results 2>/dev/null \
-
-              | xargs -r sed -i "s|$API_TOKEN|***|g" || true
-          fi
+          if [ -n "$API_TOKEN" ]; then grep -rIlF "$API_TOKEN" allure-results db/build/allure-results 2>/dev/null | xargs -r sed -i "s|$API_TOKEN|***|g" || true; fi
 
       - name: Сохранить результаты Allure
         if: always()
@@ -121,11 +117,7 @@ jobs:
         env:
           API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |
-          if [ -n "$API_TOKEN" ]; then
-            grep -rIlF "$API_TOKEN" allure-results web/build/allure-results 2>/dev/null \
-
-              | xargs -r sed -i "s|$API_TOKEN|***|g" || true
-          fi
+          if [ -n "$API_TOKEN" ]; then grep -rIlF "$API_TOKEN" allure-results web/build/allure-results 2>/dev/null | xargs -r sed -i "s|$API_TOKEN|***|g" || true; fi
 
       - name: Сохранить результаты Allure
         if: always()
