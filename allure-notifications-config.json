@@ -11,13 +11,17 @@
     "chart": {
       "mode": "collage",
       "layout": "free",
+      "width": 870,
+      "height": 500,
+      "gridCols": 10,
+      "gridRows": 10,
       "items": [
         {
           "type": "chart",
           "x": 0,
           "y": 0,
-          "w": 100,
-          "h": 100
+          "w": 10,
+          "h": 10
         }
       ]
     }
