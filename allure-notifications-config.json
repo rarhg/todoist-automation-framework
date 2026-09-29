@@ -1,20 +1,17 @@
 {
-  "telegram": {
-    "token": "TOKEN_WILL_BE_REPLACED_IN_CI",
-    "chat": "CHAT_ID_WILL_BE_REPLACED_IN_CI",
-    "replyTo": ""
-  },
-  "studio": {
+  "base": {
     "project": "Todoist QA Automation",
     "environment": "GitHub Actions",
     "comment": "Сборка завершена",
     "reportLink": "https://github.io",
     "language": "ru",
-    "base": {
-      "logo": "https://qameta.io",
-      "title": "Allure Report"
-    }
+    "logo": "https://qameta.io",
+    "allureFolder": "allure-report",
+    "enableChart": true
   },
-  "allureFolder": "allure-report",
-  "enableChart": true
+  "telegram": {
+    "token": "TOKEN_WILL_BE_REPLACED_IN_CI",
+    "chat": "CHAT_ID_WILL_BE_REPLACED_IN_CI",
+    "replyTo": ""
+  }
 }
