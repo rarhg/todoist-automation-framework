@@ -8,20 +8,24 @@
     "logo": "https://qameta.io",
     "allureFolder": "./allure-report",
     "enableChart": true,
+    "darkMode": false,
     "chart": {
       "mode": "collage",
       "layout": "free",
       "width": 870,
-      "height": 500,
-      "gridCols": 10,
-      "gridRows": 10,
+      "height": 450,
+      "headerHeight": 31,
+      "cardGap": 14,
+      "tilePad": 6,
+      "gridCols": 12,
+      "gridRows": 12,
       "items": [
         {
-          "type": "chart",
+          "type": "currentStatus",
           "x": 0,
           "y": 0,
-          "w": 10,
-          "h": 10
+          "w": 12,
+          "h": 12
         }
       ]
     }
