@@ -7,28 +7,7 @@
     "language": "ru",
     "logo": "https://qameta.io",
     "allureFolder": "./allure-report",
-    "enableChart": true,
-    "darkMode": false,
-    "chart": {
-      "mode": "collage",
-      "layout": "free",
-      "width": 870,
-      "height": 450,
-      "headerHeight": 31,
-      "cardGap": 14,
-      "tilePad": 6,
-      "gridCols": 12,
-      "gridRows": 12,
-      "items": [
-        {
-          "type": "currentStatus",
-          "x": 0,
-          "y": 0,
-          "w": 12,
-          "h": 12
-        }
-      ]
-    }
+    "enableChart": true
   },
   "telegram": {
     "token": "TOKEN_WILL_BE_REPLACED_IN_CI",
