@@ -3,7 +3,7 @@
     "project": "Todoist QA Automation",
     "environment": "GitHub Actions",
     "comment": "Сборка завершена",
-    "reportLink": "https://github.io",
+    "reportLink": "https://rarhg.github.io/todoist-automation-framework/",
     "language": "ru",
     "logo": "https://qameta.io",
     "allureFolder": "./allure-report",

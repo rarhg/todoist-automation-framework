@@ -179,7 +179,7 @@ jobs:
       - name: Установить Allure CLI
         if: steps.cache-allure.outputs.cache-hit != 'true'
         run: |
-          curl -sLo allure.zip https://apache.org
+          curl -sLo allure.zip https://repo.maven.apache.org/maven2/io/qameta/allure/allure-commandline/2.27.0/allure-commandline-2.27.0.zip
           unzip -q allure.zip -d "$HOME"
 
       - name: Добавить Allure CLI в PATH
