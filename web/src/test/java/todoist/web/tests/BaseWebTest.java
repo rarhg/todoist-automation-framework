@@ -9,7 +9,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.openqa.selenium.chrome.ChromeOptions;
 import todoist.config.ConfigProvider;
+import todoist.helpers.Attach;
 import todoist.helpers.CookieAuthManager;
+
+import java.util.Map;
 
 @Tag("web")
 public abstract class BaseWebTest {
@@ -34,6 +37,11 @@ public abstract class BaseWebTest {
             if (ConfigProvider.CONFIG.browserVersion() != null) {
                 Configuration.browserVersion = ConfigProvider.CONFIG.browserVersion();
             }
+            options.setCapability("selenoid:options", Map.of(
+                    "enableVNC", true,
+                    "enableVideo", true,
+                    "screenResolution", "1920x1080x24"
+            ));
         }
 
         Configuration.browserCapabilities = options;
@@ -51,6 +59,12 @@ public abstract class BaseWebTest {
 
     @AfterEach
     public void tearDown() {
+        Attach.screenshotAs("Last screenshot");
+        Attach.pageSource();
+        Attach.browserConsoleLogs();
+        if (ConfigProvider.CONFIG.isRemote()) {
+            Attach.addVideo();
+        }
         Selenide.closeWebDriver();
     }
 }

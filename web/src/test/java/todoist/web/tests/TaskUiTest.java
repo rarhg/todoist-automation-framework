@@ -48,6 +48,10 @@ public class TaskUiTest extends BaseWebTest {
 
         inboxPage.clickInboxLink()
                 .verifyTaskIsPresent(taskName);
+
+        // UI показывает задачу оптимистично, а на сервер она уходит асинхронно.
+        // Ждём, пока она реально появится в бэкенде, иначе очистка её не найдёт.
+        awaitTaskOnServer(taskName);
     }
 
     @Test
@@ -102,24 +106,43 @@ public class TaskUiTest extends BaseWebTest {
         inboxPage.verifyTaskIsPresent(newName);
     }
 
+    private void awaitTaskOnServer(String name) {
+        long deadline = System.currentTimeMillis() + 20_000;
+        while (System.currentTimeMillis() < deadline) {
+            TaskResponse[] tasks = taskProductionSteps.getAllActiveTasks();
+            if (tasks != null && java.util.Arrays.stream(tasks)
+                    .anyMatch(t -> t.getContent() != null && t.getContent().startsWith(name))) {
+                return;
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+        throw new AssertionError("Задача '" + name + "' не появилась на сервере за 20 секунд");
+    }
+
     @AfterEach
     public void cleanUpCreatedData() {
-        if (currentTaskName.get() != null) {
-            try {
-                TaskResponse[] activeTasks = taskProductionSteps.getAllActiveTasks();
-                if (activeTasks != null) {
-                    for (TaskResponse task : activeTasks) {
-                        if (task.getContent() != null && task.getContent().startsWith(currentTaskName.get())) {
-                            taskProductionSteps.deleteTask(task.getId());
-                            break;
-                        }
+        String name = currentTaskName.get();
+        if (name == null) {
+            return;
+        }
+        try {
+            TaskResponse[] activeTasks = taskProductionSteps.getAllActiveTasks();
+            if (activeTasks != null) {
+                for (TaskResponse task : activeTasks) {
+                    if (task.getContent() != null && task.getContent().startsWith(name)) {
+                        taskProductionSteps.deleteTask(task.getId());
                     }
                 }
-            } catch (Exception e) {
-                log.error("Не удалось очистить задачу через API: {}", e.getMessage());
-            } finally {
-                currentTaskName.remove();
             }
+        } catch (Exception e) {
+            log.error("Не удалось очистить задачу '{}' через API: {}", name, e.getMessage());
+        } finally {
+            currentTaskName.remove();
         }
     }
 }

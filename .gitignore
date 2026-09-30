@@ -10,3 +10,6 @@ local.properties
 web/auth-state.json
 common/src/main/resources/config/local.properties
 *.apk
+selenoid/video/
+selenoid/logs/
+selenoid/.env

@@ -6,6 +6,9 @@ import io.restassured.response.Response;
 import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
 
+import javax.net.ssl.SSLException;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Set;
 
 public class RetryOnServerErrorFilter implements Filter {
@@ -24,16 +27,36 @@ public class RetryOnServerErrorFilter implements Filter {
     public Response filter(FilterableRequestSpecification req,
                            FilterableResponseSpecification res,
                            FilterContext ctx) {
-        Response response = ctx.next(req, res);
-        for (int attempt = 2; attempt <= maxAttempts && RETRYABLE.contains(response.statusCode()); attempt++) {
+        Response response = null;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                Thread.sleep(delayMs * (attempt - 1));
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
+                response = ctx.next(req, res);
+                if (!RETRYABLE.contains(response.statusCode())) {
+                    return response;
+                }
+            } catch (Exception e) {
+                if (!isTransientNetworkError(e) || attempt == maxAttempts) {
+                    throw e instanceof RuntimeException re ? re : new RuntimeException(e);
+                }
             }
-            response = ctx.next(req, res);
+            if (attempt < maxAttempts) {
+                try {
+                    Thread.sleep(delayMs * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
         }
         return response;
+    }
+
+    private static boolean isTransientNetworkError(Throwable e) {
+        for (Throwable t = e; t != null; t = t.getCause()) {
+            if (t instanceof SSLException || t instanceof SocketException || t instanceof UnknownHostException) {
+                return true;
+            }
+        }
+        return false;
     }
 }
