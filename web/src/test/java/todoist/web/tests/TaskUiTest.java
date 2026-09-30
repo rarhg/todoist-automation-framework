@@ -18,6 +18,7 @@ import java.util.UUID;
 @Epic("Управление задачами")
 @Feature("Web: Управление задачами через UI")
 @Tag("web")
+@DisplayName("Web: Управление задачами через UI")
 public class TaskUiTest extends BaseWebTest {
 
     private final InboxPage inboxPage = new InboxPage();

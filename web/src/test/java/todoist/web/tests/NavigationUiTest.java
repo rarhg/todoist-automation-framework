@@ -16,6 +16,7 @@ import static com.codeborne.selenide.Selenide.$;
 @Epic("Управление задачами")
 @Feature("Web: Навигация по спискам задач")
 @Tag("web")
+@DisplayName("Web: Навигация по спискам задач")
 public class NavigationUiTest extends BaseWebTest {
 
     private final InboxPage inboxPage = new InboxPage();
