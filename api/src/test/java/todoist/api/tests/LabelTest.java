@@ -8,19 +8,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import todoist.api.models.LabelRequest;
 import todoist.api.models.LabelResponse;
 import todoist.api.steps.LabelSteps;
 import todoist.api.stubs.WireMockStubs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @Epic("Управление метками")
 @Feature("API: CRUD-операции с метками")
 @Tag("api")
 @DisplayName("API: Операции с метками Todoist")
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(CONCURRENT)
 public class LabelTest extends BaseApiTest {
 
     private final LabelSteps labelSteps = new LabelSteps();
@@ -94,8 +94,8 @@ public class LabelTest extends BaseApiTest {
         String id2 = faker.internet().uuid();
 
         String mockResponseJson = String.format(
-                "[{\"id\":\"%s\",\"name\":\"work\",\"color\":\"red\",\"is_favorite\":false},"
-                        + "{\"id\":\"%s\",\"name\":\"home\",\"color\":\"blue\",\"is_favorite\":true}]",
+                "{\"results\":[{\"id\":\"%s\",\"name\":\"work\",\"color\":\"red\",\"is_favorite\":false},"
+                        + "{\"id\":\"%s\",\"name\":\"home\",\"color\":\"blue\",\"is_favorite\":true}],\"next_cursor\":null}",
                 id1, id2
         );
 

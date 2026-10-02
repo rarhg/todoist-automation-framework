@@ -24,7 +24,7 @@ public class ProjectSteps {
                 .when()
                 .post("/projects")
                 .then()
-                .spec(getResponseSpec(201))
+                .spec(getResponseSpec(200))
                 .extract().as(ProjectResponse.class);
     }
 

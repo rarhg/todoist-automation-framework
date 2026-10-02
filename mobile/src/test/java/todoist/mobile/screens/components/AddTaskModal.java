@@ -2,7 +2,9 @@ package todoist.mobile.screens.components;
 
 import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
+import io.appium.java_client.android.AndroidDriver;
 import org.openqa.selenium.By;
+import todoist.mobile.helpers.AppStateResolver;
 import todoist.mobile.screens.BaseMobileScreen;
 import todoist.mobile.screens.MainScreen;
 
@@ -25,15 +27,7 @@ public class AddTaskModal extends BaseMobileScreen {
 
     public MainScreen clickSave() {
         click(submitTaskButton);
-
-        try {
-            if (((io.appium.java_client.android.AndroidDriver) driver).isKeyboardShown()) {
-                ((io.appium.java_client.android.AndroidDriver) driver).hideKeyboard();
-            }
-        } catch (Exception e) {
-            System.err.println("[Lifecycle] Предупреждение: Не удалось скрыть клавиатуру: " + e.getMessage());
-        }
-
+        AppStateResolver.hideKeyboardIfShown((AndroidDriver) driver);
         return new MainScreen(driver);
     }
 }

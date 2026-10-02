@@ -7,6 +7,7 @@ import net.datafaker.Faker;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
 import todoist.api.models.ProjectRequest;
 import todoist.api.models.ProjectResponse;
 import todoist.api.steps.ProjectSteps;
@@ -14,11 +15,13 @@ import todoist.api.stubs.WireMockStubs;
 import todoist.config.ConfigProvider;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @Epic("Управление проектами")
 @Feature("API: CRUD-операции с проектами")
 @Tag("api")
 @DisplayName("API: Операции с проектами Todoist")
+@Execution(CONCURRENT)
 public class ProjectTest extends BaseApiTest {
 
     private final ProjectSteps projectSteps = new ProjectSteps();
@@ -37,7 +40,7 @@ public class ProjectTest extends BaseApiTest {
                 .build();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"name\":\"%s\",\"color\":\"blue\",\"is_favorite\":true,\"url\":\"https://todoist.com\"}",
+                "{\"id\":\"%s\",\"name\":\"%s\",\"color\":\"blue\",\"is_favorite\":true}",
                 generatedId, projectName
         );
 

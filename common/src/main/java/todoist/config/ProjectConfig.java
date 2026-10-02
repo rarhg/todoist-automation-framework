@@ -78,10 +78,6 @@ public interface ProjectConfig extends Config, Reloadable {
     @DefaultValue("emulator-5554")
     String localDeviceName();
 
-    @Key("appium.local.url")
-    @DefaultValue("http://127.0.0.1:4723")
-    String appiumLocalUrl();
-
     @Key("app.package")
     String appPackage();
 

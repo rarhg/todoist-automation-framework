@@ -20,7 +20,7 @@ public class CommentSteps {
                 .when()
                 .post("/comments")
                 .then()
-                .spec(getResponseSpec(201))
+                .spec(getResponseSpec(200))
                 .extract().as(CommentResponse.class);
     }
 
@@ -45,7 +45,9 @@ public class CommentSteps {
                 .get("/comments")
                 .then()
                 .spec(getResponseSpec(200))
-                .extract().as(CommentResponse[].class);
+                .extract()
+                .jsonPath()
+                .getObject("results", CommentResponse[].class);
     }
 
     @Step("Обновить комментарий по ID: {id}")

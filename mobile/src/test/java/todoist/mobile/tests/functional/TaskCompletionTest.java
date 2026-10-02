@@ -23,7 +23,7 @@ public class TaskCompletionTest extends BaseFunctionalTest {
     public void shouldCompleteSpecificTaskByName() {
         String uniqueTaskName = "Task_" + System.currentTimeMillis();
 
-        System.out.println("[Precondition] Создание тестовой задачи через API: " + uniqueTaskName);
+        log.info("Создание тестовой задачи через API: {}", uniqueTaskName);
         apiSteps.createTask(uniqueTaskName);
 
         MainScreen mainScreen = new MainScreen(driver());

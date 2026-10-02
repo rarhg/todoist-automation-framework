@@ -24,5 +24,4 @@ public class ProjectResponse {
     @JsonProperty("inbox_project")
     private Boolean isInboxProject;
 
-    private String url;
 }

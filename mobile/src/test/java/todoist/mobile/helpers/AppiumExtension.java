@@ -8,22 +8,43 @@ import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.openqa.selenium.MutableCapabilities;
+import org.openqa.selenium.ScreenOrientation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import todoist.config.ConfigProvider;
 import todoist.config.ProjectConfig;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
+
+    private static final Logger log = LoggerFactory.getLogger(AppiumExtension.class);
 
     private static final ThreadLocal<AndroidDriver> driverThreadLocal = new ThreadLocal<>();
     private static final ThreadLocal<AppiumDriverLocalService> serverThreadLocal = new ThreadLocal<>();
     private static final ProjectConfig config = ConfigProvider.CONFIG;
 
-    private static final String RUN_ID = java.time.LocalDateTime.now()
-            .format(java.time.format.DateTimeFormatter.ofPattern("MM-dd_HH-mm"));
+    private static final String RUN_ID = LocalDateTime.now()
+            .format(DateTimeFormatter.ofPattern("MM-dd_HH-mm"));
+
+    private static final List<String> ANIMATION_SETTINGS = List.of(
+            "window_animation_scale", "transition_animation_scale", "animator_duration_scale");
+
+    private static final List<String> AUTOFILL_COMMANDS = List.of(
+            "adb shell settings put secure autofill_service null",
+            "adb shell settings put secure autofill_field_classification 0",
+            "adb shell settings put secure autofill_feature_field_classification 0",
+            "adb shell settings put secure credential_manager_enabled 0",
+            "adb shell settings put secure credential_service null",
+            "adb shell settings put secure credential_service_primary null"
+    );
 
     public static boolean isClassFailed = false;
 
@@ -40,27 +61,28 @@ public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
         ConfigProvider.refresh();
         isClassFailed = false;
 
-        String provider = config.mobileProvider().toLowerCase();
+        String provider = provider();
         if ("local".equals(provider)) {
             initLocalDriver();
         } else if ("browserstack".equals(provider)) {
-            String className = context.getRequiredTestClass().getSimpleName();
-            initBrowserStackDriver(className);
+            initBrowserStackDriver(context.getRequiredTestClass().getSimpleName());
         } else {
             throw new IllegalArgumentException("Неподдерживаемый мобильный провайдер: " + provider);
         }
     }
 
+    private static String provider() {
+        return config.mobileProvider().toLowerCase();
+    }
+
     private void initLocalDriver() {
-        try {
-            Runtime.getRuntime().exec("adb kill-server").waitFor();
-            Runtime.getRuntime().exec("adb start-server").waitFor();
-        } catch (Exception e) {
-            System.err.println("Ошибка сброса ADB: " + e.getMessage());
-        }
-        disableAndroidAutofill();
-        disableSystemAnimations();
-        setDeviceTimeZone();
+        runAdb("adb kill-server");
+        runAdb("adb start-server");
+        AUTOFILL_COMMANDS.forEach(AppiumExtension::runAdb);
+        setAnimationScale(0);
+        runAdb("adb shell service call alarm 3 s16 " + config.deviceTimeZone());
+        log.info("Часовой пояс устройства: {}", config.deviceTimeZone());
+
         AppiumDriverLocalService localServer = new AppiumServiceBuilder()
                 .withIPAddress("127.0.0.1")
                 .usingAnyFreePort()
@@ -68,6 +90,7 @@ public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
                 .build();
         localServer.start();
         serverThreadLocal.set(localServer);
+
         UiAutomator2Options options = new UiAutomator2Options();
         options.setCapability("appium:androidHome", config.androidSdkHome());
         options.setDeviceName(config.localDeviceName());
@@ -75,70 +98,18 @@ public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
         options.setAppActivity(config.appActivity());
         options.setNoReset(true);
         options.setSkipDeviceInitialization(true);
-        boolean isCleanInstallNeeded =
-                Boolean.parseBoolean(System.getProperty("clean.install", "false"));
-        if (isCleanInstallNeeded && config.localApkPath() != null &&
-                !config.localApkPath().isEmpty()) {
+        boolean isCleanInstallNeeded = Boolean.parseBoolean(System.getProperty("clean.install", "false"));
+        if (isCleanInstallNeeded && config.localApkPath() != null && !config.localApkPath().isEmpty()) {
             options.setApp(config.localApkPath());
             options.setNoReset(false);
         }
         options.setCapability("appium:language", "ru");
         options.setCapability("appium:locale", "RU");
         options.setCapability("appium:autoGrantPermissions", true);
+
         AndroidDriver driver = new AndroidDriver(localServer.getUrl(), options);
         driverThreadLocal.set(driver);
         grantNotificationPermission(driver);
-    }
-
-    private void disableSystemAnimations() {
-        String[] commands = {
-                "adb shell settings put global window_animation_scale 0",
-                "adb shell settings put global transition_animation_scale 0",
-                "adb shell settings put global animator_duration_scale 0"
-        };
-        for (String command : commands) {
-            try {
-                Runtime.getRuntime().exec(command).waitFor();
-            } catch (Exception e) {
-                System.err.println("[Animations] Не удалось отключить анимацию: "
-                        + command + " -> " + e.getMessage());
-            }
-        }
-    }
-
-    private void restoreSystemAnimations() {
-        String[] commands = {
-                "adb shell settings put global window_animation_scale 1",
-                "adb shell settings put global transition_animation_scale 1",
-                "adb shell settings put global animator_duration_scale 1"
-        };
-        for (String command : commands) {
-            try {
-                Runtime.getRuntime().exec(command).waitFor();
-            } catch (Exception e) {
-                System.err.println("[Animations] Не удалось восстановить анимацию: "
-                        + command + " -> " + e.getMessage());
-            }
-        }
-    }
-
-    private void disableAndroidAutofill() {
-        String[] commands = {
-                "adb shell settings put secure autofill_service null",
-                "adb shell settings put secure autofill_field_classification 0",
-                "adb shell settings put secure autofill_feature_field_classification 0",
-                "adb shell settings put secure credential_manager_enabled 0",
-                "adb shell settings put secure credential_service null",
-                "adb shell settings put secure credential_service_primary null"
-        };
-        for (String command : commands) {
-            try {
-                Runtime.getRuntime().exec(command).waitFor();
-            } catch (Exception e) {
-                System.err.println("[Autofill] Команда не выполнена (может не "
-                        + "существовать на этой версии Android): " + command + " -> " + e.getMessage());
-            }
-        }
     }
 
     private void initBrowserStackDriver(String sessionName) throws MalformedURLException {
@@ -152,16 +123,16 @@ public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
         capabilities.setCapability("appium:language", "ru");
         capabilities.setCapability("appium:locale", "RU");
         capabilities.setCapability("appium:autoGrantPermissions", true);
+
         Map<String, Object> bstackOptions = new HashMap<>();
         bstackOptions.put("userName", config.browserstackUsername());
         bstackOptions.put("accessKey", config.browserstackAccessKey());
         bstackOptions.put("projectName", config.browserstackProjectName());
-
         bstackOptions.put("buildName", config.browserstackBuildName() + "_" + RUN_ID);
         bstackOptions.put("sessionName", sessionName);
-
         bstackOptions.put("timezone", config.browserstackTimezone());
         capabilities.setCapability("bstack:options", bstackOptions);
+
         URL remoteUrl = new URL(String.format("https://%s:%s@hub-cloud.browserstack.com/wd/hub",
                 config.browserstackUsername(), config.browserstackAccessKey()));
         AndroidDriver driver = new AndroidDriver(remoteUrl, capabilities);
@@ -174,35 +145,53 @@ public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
             Map<String, Object> args = new HashMap<>();
             args.put("action", "grant");
             args.put("appPackage", config.appPackage());
-            args.put("permissions", java.util.List.of("android.permission.POST_NOTIFICATIONS"));
+            args.put("permissions", List.of("android.permission.POST_NOTIFICATIONS"));
             driver.executeScript("mobile: changePermissions", args);
-            System.out.println("[Permissions] Разрешение на уведомления выдано успешно.");
+            log.info("Разрешение на уведомления выдано");
         } catch (Exception e) {
-            System.err.println("[Permissions] Не удалось выдать разрешение на уведомления: " + e.getMessage());
+            log.warn("Не удалось выдать разрешение на уведомления: {}", e.getMessage());
         }
     }
 
-    private void setDeviceTimeZone() {
-        String timeZone = config.deviceTimeZone();
-        String command = "adb shell service call alarm 3 s16 " + timeZone;
+    private static void setAnimationScale(int scale) {
+        for (String setting : ANIMATION_SETTINGS) {
+            runAdb("adb shell settings put global " + setting + " " + scale);
+        }
+    }
+
+    private static void runAdb(String command) {
         try {
             Runtime.getRuntime().exec(command).waitFor();
-            System.out.println("[TimeZone] Часовой пояс устройства установлен: " + timeZone);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Команда прервана: {}", command);
         } catch (Exception e) {
-            System.err.println("[TimeZone] Не удалось установить часовой пояс: " + e.getMessage());
+            log.warn("Команда не выполнена (может не поддерживаться этой версией Android): {} -> {}",
+                    command, e.getMessage());
+        }
+    }
+
+    public static void lockPortrait() {
+        AndroidDriver d = getDriver();
+        try {
+            if (d.getOrientation() != ScreenOrientation.PORTRAIT) {
+                d.rotate(ScreenOrientation.PORTRAIT);
+            }
+        } catch (Exception e) {
+            log.warn("Не удалось зафиксировать портрет: {}", e.getMessage());
         }
     }
 
     @Override
     public void afterAll(ExtensionContext context) {
-        if ("local".equals(config.mobileProvider().toLowerCase())) {
-            restoreSystemAnimations();
+        if ("local".equals(provider())) {
+            setAnimationScale(1);
         }
 
         AndroidDriver driver = driverThreadLocal.get();
         if (driver != null) {
             try {
-                if ("browserstack".equals(config.mobileProvider().toLowerCase())) {
+                if ("browserstack".equals(provider())) {
                     String status = isClassFailed ? "failed" : "passed";
                     String reason = isClassFailed ? "One or more tests failed in this class" : "All tests passed";
 
@@ -212,7 +201,7 @@ public class AppiumExtension implements BeforeAllCallback, AfterAllCallback {
                     );
                 }
             } catch (Exception e) {
-                System.err.println("[BrowserStack] Не удалось отправить статус сессии: " + e.getMessage());
+                log.warn("Не удалось отправить статус сессии в BrowserStack: {}", e.getMessage());
             }
 
             try {

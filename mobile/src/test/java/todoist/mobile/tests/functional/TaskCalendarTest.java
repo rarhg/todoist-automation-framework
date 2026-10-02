@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import todoist.mobile.screens.MainScreen;
 import todoist.mobile.screens.UpcomingScreen;
 import todoist.mobile.tests.base.BaseFunctionalTest;
+
 import java.time.LocalDate;
 
 @Epic("Управление задачами")
@@ -30,21 +31,19 @@ public class TaskCalendarTest extends BaseFunctionalTest {
 
         upcomingScreen.selectDayInCalendar(daysToAdd);
 
-        boolean isHeaderVisible = upcomingScreen.isHeaderForDateDisplayed(targetDate);
-
         Assertions.assertTrue(
-                isHeaderVisible,
+                upcomingScreen.isHeaderForDateDisplayed(targetDate),
                 String.format("Фокус списка задач не переключился на выбранную дату (%s)!", targetDate)
         );
     }
 
     @AfterEach
     void returnToInboxTab() {
-        System.out.println("[Postcondition] Возвращаемся на вкладку 'Входящие' для изоляции следующих тестов...");
+        log.info("Возвращаемся на вкладку 'Входящие' для изоляции следующих тестов");
         try {
             new MainScreen(driver()).openInboxTab();
         } catch (Exception e) {
-            System.err.println("[Postcondition] Не удалось вернуться на 'Входящие': " + e.getMessage());
+            log.warn("Не удалось вернуться на 'Входящие': {}", e.getMessage());
         }
     }
 }

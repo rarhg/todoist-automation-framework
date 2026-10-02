@@ -32,6 +32,7 @@ public class ProjectUiTest extends BaseWebTest {
     private final ThreadLocal<String> uniqueProjectName = new ThreadLocal<>();
 
     private static final Logger log = LoggerFactory.getLogger(ProjectUiTest.class);
+
     @BeforeEach
     void setUpSession() {
         uniqueProjectName.set("UI_PROJ_" + UUID.randomUUID().toString().substring(0, 8));

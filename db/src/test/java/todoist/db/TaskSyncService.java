@@ -4,7 +4,6 @@ import io.qameta.allure.Step;
 import todoist.api.models.TaskResponse;
 import todoist.api.steps.TaskProductionSteps;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -21,10 +20,9 @@ public class TaskSyncService {
 
     @Step("Синхронизировать активные задачи из Todoist в локальную БД")
     public Set<String> syncActiveTasks() {
-        TaskResponse[] tasks = apiSteps.getAllActiveTasks();
         Set<String> activeIds = new HashSet<>();
 
-        for (TaskResponse task : tasks) {
+        for (TaskResponse task : apiSteps.getAllActiveTasks()) {
             dao.upsert(task.getId(), task.getContent(), "ACTIVE");
             activeIds.add(task.getId());
         }
@@ -41,11 +39,5 @@ public class TaskSyncService {
                         dao.upsert(record.taskId(), record.content(), "COMPLETED"));
             }
         }
-    }
-
-    static Set<String> toIdSet(TaskResponse... tasks) {
-        Set<String> ids = new HashSet<>();
-        Arrays.stream(tasks).forEach(t -> ids.add(t.getId()));
-        return ids;
     }
 }

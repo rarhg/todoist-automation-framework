@@ -48,8 +48,8 @@ public final class Attach {
                 StringBuilder logs = new StringBuilder();
 
                 logEntries.getAll().stream()
-                        .filter(log -> log.getLevel().intValue() >= Level.SEVERE.intValue())
-                        .forEach(log -> logs.append(log.getMessage()).append("\n"));
+                        .filter(entry -> entry.getLevel().intValue() >= Level.SEVERE.intValue())
+                        .forEach(entry -> logs.append(entry.getMessage()).append("\n"));
 
                 return logs.toString();
             } catch (Exception e) {
@@ -77,7 +77,7 @@ public final class Attach {
         try {
             return new URL(videoUrl);
         } catch (MalformedURLException e) {
-            log.error(String.format("Failed to create video URL: %s", e.getMessage()));
+            log.error("Failed to create video URL: {}", e.getMessage());
         }
         return null;
     }

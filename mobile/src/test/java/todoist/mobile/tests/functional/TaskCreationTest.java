@@ -13,6 +13,8 @@ import todoist.mobile.screens.MainScreen;
 import todoist.mobile.tests.base.BaseFunctionalTest;
 import todoist.mobile.tests.functional.data.NlpCase;
 
+import java.time.Duration;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Epic("Управление задачами")
@@ -20,6 +22,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("androidLocal")
 @DisplayName("Тесты на создание задач в мобильном приложении")
 public class TaskCreationTest extends BaseFunctionalTest {
+
+    private static final Duration SERVER_SYNC_TIMEOUT = Duration.ofSeconds(20);
 
     @Test
     @Story("Создание задачи через UI")
@@ -53,23 +57,17 @@ public class TaskCreationTest extends BaseFunctionalTest {
 
         mainScreen.swipeDownToRefresh();
 
-        boolean isLocalTaskVisible = mainScreen.isTaskVisibleOnUi(testCase.taskCleanName());
-        assertThat(isLocalTaskVisible)
+        assertThat(mainScreen.isTaskVisibleOnUi(testCase.taskCleanName()))
                 .as("Задача с очищенным именем '" + testCase.taskCleanName() + "' должна отобразиться на UI")
                 .isTrue();
 
-        TaskResponse[] activeTasks = apiSteps.getAllActiveTasks();
-        TaskResponse targetTask = null;
+        TaskResponse task = apiSteps.awaitActiveTaskByContent(testCase.taskCleanName(), SERVER_SYNC_TIMEOUT);
 
-        for (TaskResponse task : activeTasks) {
-            if (task.getContent().contains(testCase.taskCleanName())) {
-                targetTask = task;
-                break;
-            }
-        }
-
-        assertThat(targetTask)
-                .as("Созданная NLP-задача не найдена через API-слой бэкенда!")
+        assertThat(task.getDue())
+                .as("У задачи должен быть срок, распознанный из фразы '" + testCase.inputPhrase() + "'")
                 .isNotNull();
+        assertThat(task.getDue().toLocalDate())
+                .as("Дата срока, распознанная из фразы '" + testCase.inputPhrase() + "'")
+                .isEqualTo(testCase.getExpectedDate());
     }
 }

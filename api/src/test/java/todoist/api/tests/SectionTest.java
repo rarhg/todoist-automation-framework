@@ -8,19 +8,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import todoist.api.models.SectionRequest;
 import todoist.api.models.SectionResponse;
 import todoist.api.steps.SectionSteps;
 import todoist.api.stubs.WireMockStubs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @Epic("Управление разделами")
 @Feature("API: CRUD-операции с разделами")
 @Tag("api")
 @DisplayName("API: Операции со секциями Todoist")
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(CONCURRENT)
 public class SectionTest extends BaseApiTest {
 
     private final SectionSteps sectionSteps = new SectionSteps();
@@ -41,7 +41,7 @@ public class SectionTest extends BaseApiTest {
                 .build();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"project_id\":\"%s\",\"name\":\"%s\",\"order\":1}",
+                "{\"id\":\"%s\",\"project_id\":\"%s\",\"name\":\"%s\",\"section_order\":1}",
                 generatedId, projectId, sectionName
         );
 
@@ -88,7 +88,7 @@ public class SectionTest extends BaseApiTest {
                 .build();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"project_id\":\"%s\",\"name\":\"%s\",\"order\":1}",
+                "{\"id\":\"%s\",\"project_id\":\"%s\",\"name\":\"%s\",\"section_order\":1}",
                 generatedId, projectId, updatedName
         );
 

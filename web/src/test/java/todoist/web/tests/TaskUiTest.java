@@ -3,16 +3,20 @@ package todoist.web.tests;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import todoist.api.models.TaskResponse;
 import todoist.api.steps.TaskProductionSteps;
 import todoist.web.components.AddTaskModal;
 import todoist.web.components.ConfirmationModal;
 import todoist.web.components.TaskDetailsPanel;
 import todoist.web.pages.InboxPage;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Epic("Управление задачами")
@@ -21,13 +25,15 @@ import java.util.UUID;
 @DisplayName("Web: Управление задачами через UI")
 public class TaskUiTest extends BaseWebTest {
 
+    private static final Logger log = LoggerFactory.getLogger(TaskUiTest.class);
+    private static final Duration SERVER_SYNC_TIMEOUT = Duration.ofSeconds(20);
+
     private final InboxPage inboxPage = new InboxPage();
     private final AddTaskModal addTaskModal = new AddTaskModal();
     private final TaskProductionSteps taskProductionSteps = new TaskProductionSteps();
     private final ThreadLocal<String> currentTaskName = new ThreadLocal<>();
     private final ConfirmationModal confirmationModal = new ConfirmationModal();
     private final TaskDetailsPanel taskDetailsPanel = new TaskDetailsPanel();
-    private static final Logger log = LoggerFactory.getLogger(TaskUiTest.class);
 
     @BeforeEach
     public void setUpTaskData() {
@@ -50,9 +56,7 @@ public class TaskUiTest extends BaseWebTest {
         inboxPage.clickInboxLink()
                 .verifyTaskIsPresent(taskName);
 
-        // UI показывает задачу оптимистично, а на сервер она уходит асинхронно.
-        // Ждём, пока она реально появится в бэкенде, иначе очистка её не найдёт.
-        awaitTaskOnServer(taskName);
+        taskProductionSteps.awaitActiveTaskByContentPrefix(taskName, SERVER_SYNC_TIMEOUT);
     }
 
     @Test
@@ -107,24 +111,6 @@ public class TaskUiTest extends BaseWebTest {
         inboxPage.verifyTaskIsPresent(newName);
     }
 
-    private void awaitTaskOnServer(String name) {
-        long deadline = System.currentTimeMillis() + 20_000;
-        while (System.currentTimeMillis() < deadline) {
-            TaskResponse[] tasks = taskProductionSteps.getAllActiveTasks();
-            if (tasks != null && java.util.Arrays.stream(tasks)
-                    .anyMatch(t -> t.getContent() != null && t.getContent().startsWith(name))) {
-                return;
-            }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-        }
-        throw new AssertionError("Задача '" + name + "' не появилась на сервере за 20 секунд");
-    }
-
     @AfterEach
     public void cleanUpCreatedData() {
         String name = currentTaskName.get();
@@ -132,14 +118,8 @@ public class TaskUiTest extends BaseWebTest {
             return;
         }
         try {
-            TaskResponse[] activeTasks = taskProductionSteps.getAllActiveTasks();
-            if (activeTasks != null) {
-                for (TaskResponse task : activeTasks) {
-                    if (task.getContent() != null && task.getContent().startsWith(name)) {
-                        taskProductionSteps.deleteTask(task.getId());
-                    }
-                }
-            }
+            taskProductionSteps.findActiveTasksByContentPrefix(name)
+                    .forEach(task -> taskProductionSteps.deleteTask(task.getId()));
         } catch (Exception e) {
             log.error("Не удалось очистить задачу '{}' через API: {}", name, e.getMessage());
         } finally {

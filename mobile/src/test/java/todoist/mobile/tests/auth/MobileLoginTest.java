@@ -4,7 +4,10 @@ import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import net.datafaker.Faker;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import todoist.config.ConfigProvider;
 import todoist.mobile.screens.MainScreen;
 import todoist.mobile.screens.WelcomeScreen;
@@ -16,13 +19,6 @@ import todoist.mobile.tests.base.BaseAuthTest;
 public class MobileLoginTest extends BaseAuthTest {
 
     private final Faker faker = new Faker();
-
-    @BeforeEach
-    void prepareCleanWelcomeScreen() {
-        System.out.println("[Precondition] Выполнение безопасного нативного сброса приложения Todoist...");
-        WelcomeScreen welcomeScreen = new WelcomeScreen(driver());
-        welcomeScreen.clearAppSession();
-    }
 
     @Test
     @Story("Успешный вход")
@@ -53,7 +49,7 @@ public class MobileLoginTest extends BaseAuthTest {
         String invalidEmail = faker.lorem().word() + "Email.com";
         String randomPassword = faker.internet().password(8, 12);
 
-        System.out.println("[Faker] Сгенерирован невалидный email: " + invalidEmail);
+        log.info("Сгенерирован невалидный email: {}", invalidEmail);
 
         welcomeScreen.openEmailMenu()
                 .selectRegisterFromDropdown()
@@ -61,14 +57,8 @@ public class MobileLoginTest extends BaseAuthTest {
 
         welcomeScreen.confirmLogin();
 
-        boolean isStillOnWelcomeScreen = welcomeScreen.isDisplayed(
-                io.appium.java_client.AppiumBy.androidUIAutomator(
-                        "new UiSelector().resourceId(\"email\")"
-                )
-        );
-
         Assertions.assertTrue(
-                isStillOnWelcomeScreen,
+                welcomeScreen.isEmailFieldDisplayed(),
                 "Приложение должно было заблокировать регистрацию и оставить пользователя на форме ввода!"
         );
     }
@@ -82,7 +72,7 @@ public class MobileLoginTest extends BaseAuthTest {
         String validEmail = faker.internet().emailAddress();
         String shortPassword = faker.internet().password(1, 3);
 
-        System.out.println("[Faker] Сгенерирован короткий пароль: " + shortPassword);
+        log.info("Сгенерирован короткий пароль: {}", shortPassword);
 
         welcomeScreen.openEmailMenu()
                 .selectRegisterFromDropdown()
@@ -90,14 +80,8 @@ public class MobileLoginTest extends BaseAuthTest {
 
         welcomeScreen.confirmLogin();
 
-        boolean isStillOnWelcomeScreen = welcomeScreen.isDisplayed(
-                io.appium.java_client.AppiumBy.androidUIAutomator(
-                        "new UiSelector().resourceId(\"password\")"
-                )
-        );
-
         Assertions.assertTrue(
-                isStillOnWelcomeScreen,
+                welcomeScreen.isPasswordFieldDisplayed(),
                 "Приложение должно блокировать переход при слишком коротком пароле!"
         );
     }
@@ -113,9 +97,8 @@ public class MobileLoginTest extends BaseAuthTest {
 
         welcomeScreen.attemptConfirmWithoutValidation();
 
-        boolean isStillOnRegistration = welcomeScreen.isRegisterTitleDisplayed();
         Assertions.assertTrue(
-                isStillOnRegistration,
+                welcomeScreen.isRegisterTitleDisplayed(),
                 "Приложение должно было проигнорировать пустой клик и оставить пользователя на экране 'Создать аккаунт'!"
         );
     }

@@ -8,22 +8,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import todoist.api.models.TaskRequest;
 import todoist.api.models.TaskResponse;
 import todoist.api.steps.TaskApiSteps;
 import todoist.api.stubs.WireMockStubs;
 
-import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.assertj.core.api.Assertions.assertThat;
-import static todoist.api.specs.Specs.getRequestSpec;
-import static todoist.api.specs.Specs.getResponseSpec;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @Tag("api")
 @Epic("Управление задачами")
 @Feature("API: CRUD-операции с задачами")
 @DisplayName("API: Операции с задачами Todoist")
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(CONCURRENT)
 public class TaskTest extends BaseApiTest {
 
     private final TaskApiSteps taskSteps = new TaskApiSteps();
@@ -42,25 +39,17 @@ public class TaskTest extends BaseApiTest {
                 .build();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"content\":\"%s\",\"description\":\"Task created by autotest\",\"project_id\":null,\"is_completed\":false}",
+                "{\"id\":\"%s\",\"content\":\"%s\",\"description\":\"Task created by autotest\",\"project_id\":null,\"checked\":false}",
                 generatedId, taskName
         );
 
         WireMockStubs.stubPostSuccess(wireMockServer, "/tasks", "$.content", taskName, mockResponseJson);
 
-        TaskResponse response = io.restassured.RestAssured.given()
-                .spec(getRequestSpec(getMockBaseUrl()))
-                .body(requestBody)
-                .when()
-                .post("/tasks")
-                .then()
-                .spec(getResponseSpec(201))
-                .body(matchesJsonSchemaInClasspath("schemas/task-response-schema.json"))
-                .extract().as(TaskResponse.class);
+        TaskResponse response = taskSteps.createTaskWithContractCheck(getMockBaseUrl(), requestBody);
 
         assertThat(response.getId()).isNotEmpty();
         assertThat(response.getContent()).isEqualTo(taskName);
-        assertThat(response.getIsCompleted()).isFalse();
+        assertThat(response.getChecked()).isFalse();
     }
 
     @Test
@@ -72,7 +61,7 @@ public class TaskTest extends BaseApiTest {
         String taskName = faker.job().title();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"content\":\"%s\",\"is_completed\":false}",
+                "{\"id\":\"%s\",\"content\":\"%s\",\"checked\":false}",
                 generatedId, taskName
         );
 
@@ -124,7 +113,7 @@ public class TaskTest extends BaseApiTest {
                 .build();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"content\":\"%s\",\"priority\":4,\"is_completed\":false}",
+                "{\"id\":\"%s\",\"content\":\"%s\",\"priority\":4,\"checked\":false}",
                 generatedId, updatedContent
         );
 

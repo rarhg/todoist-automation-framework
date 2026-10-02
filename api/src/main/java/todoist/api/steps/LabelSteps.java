@@ -18,7 +18,7 @@ public class LabelSteps {
                 .when()
                 .post("/labels")
                 .then()
-                .spec(getResponseSpec(201))
+                .spec(getResponseSpec(200))
                 .extract().as(LabelResponse.class);
     }
 
@@ -53,7 +53,9 @@ public class LabelSteps {
                 .get("/labels")
                 .then()
                 .spec(getResponseSpec(200))
-                .extract().as(LabelResponse[].class);
+                .extract()
+                .jsonPath()
+                .getObject("results", LabelResponse[].class);
     }
 
     @Step("Обновить метку по ID: {id}")

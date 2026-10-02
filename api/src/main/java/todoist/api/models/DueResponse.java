@@ -7,19 +7,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SectionResponse {
+public class DueResponse {
 
-    private String id;
+    private String date;
+    private String string;
+    private String timezone;
 
-    @JsonProperty("project_id")
-    private String projectId;
+    @JsonProperty("is_recurring")
+    private Boolean isRecurring;
 
-    private String name;
-    @JsonProperty("section_order")
-    private Integer sectionOrder;
+    public LocalDate toLocalDate() {
+        return date == null ? null : LocalDate.parse(date.substring(0, 10));
+    }
 }

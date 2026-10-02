@@ -4,6 +4,8 @@ import io.appium.java_client.AppiumBy;
 import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.By;
 
+import java.time.Duration;
+
 public class WelcomeScreen extends BaseMobileScreen {
 
     private final By emailLoginMenuButton = AppiumBy.androidUIAutomator(
@@ -62,34 +64,25 @@ public class WelcomeScreen extends BaseMobileScreen {
         return new MainScreen(driver);
     }
 
-    public WelcomeScreen clearAppSession() {
-        try {
-            driver.executeScript("mobile: clearApp", java.util.Map.of("appId", "com.todoist"));
-            driver.executeScript("mobile: startActivity", java.util.Map.of(
-                    "component", "com.todoist/.alias.HomeActivityDefault"));
-        } catch (Exception e) {
-            System.err.println("[Error] Ошибка при сбросе сессии приложения: " + e.getMessage());
-        }
-        return this;
-    }
-
     public boolean isRegisterTitleDisplayed() {
         return isDisplayed(registerTitle);
     }
 
+    public boolean isEmailFieldDisplayed() {
+        return isDisplayed(emailInput);
+    }
+
+    public boolean isPasswordFieldDisplayed() {
+        return isDisplayed(passwordInput);
+    }
+
     public boolean isWelcomeScreenVisible() {
-        System.out.println("[Validation] Проверяем, заблокирован ли переход (находимся ли на WelcomeScreen)...");
-        return isDisplayedWithWait(emailLoginMenuButton, java.time.Duration.ofSeconds(10));
+        log.debug("Проверяем, находимся ли на WelcomeScreen");
+        return isDisplayedWithWait(emailLoginMenuButton, Duration.ofSeconds(10));
     }
 
     public WelcomeScreen attemptConfirmWithoutValidation() {
-        try {
-            new org.openqa.selenium.support.ui.WebDriverWait(driver, java.time.Duration.ofSeconds(3))
-                    .until(org.openqa.selenium.support.ui.ExpectedConditions.elementToBeClickable(submitLoginButton))
-                    .click();
-        } catch (org.openqa.selenium.TimeoutException e) {
-            System.out.println("[WelcomeScreen] Кнопка отправки формы заблокирована (ожидаемо при невалидных/пустых полях).");
-        }
+        click(submitLoginButton, Duration.ofSeconds(3), false);
         return this;
     }
 }

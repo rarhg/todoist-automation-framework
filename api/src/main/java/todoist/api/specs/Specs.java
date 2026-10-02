@@ -14,55 +14,26 @@ public final class Specs {
     private static final String REQUEST_TEMPLATE = "todoist-http-request.ftl";
     private static final String RESPONSE_TEMPLATE = "todoist-http-response.ftl";
 
-    private static AllureRestAssured allureFilter() {
-        return new AllureRestAssured()
-                .setRequestTemplate(REQUEST_TEMPLATE)
-                .setResponseTemplate(RESPONSE_TEMPLATE);
-    }
-
-    public static final RequestSpecification PRODUCTION_REQUEST_SPEC = new RequestSpecBuilder()
-            .setBaseUri(ConfigProvider.CONFIG.apiUrl())
-            .setBasePath(ConfigProvider.CONFIG.apiVersion())
-            .setContentType(ContentType.JSON)
-            .addHeader("Authorization", "Bearer " + ConfigProvider.CONFIG.apiToken())
-            .addFilter(new RetryOnServerErrorFilter(3, 1000))
-            .addFilter(allureFilter())
-            .log(LogDetail.ALL)
-            .build();
+    public static final RequestSpecification PRODUCTION_REQUEST_SPEC = build(
+            baseSpec(ConfigProvider.CONFIG.apiUrl())
+                    .addHeader("Authorization", bearer(ConfigProvider.CONFIG.apiToken()))
+                    .addFilter(new RetryOnServerErrorFilter(3, 1000)));
 
     private Specs() {
     }
 
     public static RequestSpecification getRequestSpec(String baseUrl) {
-        return new RequestSpecBuilder()
-                .setBaseUri(baseUrl)
-                .setBasePath(ConfigProvider.CONFIG.apiVersion())
-                .setContentType(ContentType.JSON)
-                .addHeader("Authorization", "Bearer " + ConfigProvider.CONFIG.mockTestToken())
-                .addFilter(allureFilter())
-                .log(LogDetail.ALL)
-                .build();
+        return build(baseSpec(baseUrl)
+                .addHeader("Authorization", bearer(ConfigProvider.CONFIG.mockTestToken())));
     }
 
     public static RequestSpecification getRequestSpecWithoutToken(String baseUrl) {
-        return new RequestSpecBuilder()
-                .setBaseUri(baseUrl)
-                .setBasePath(ConfigProvider.CONFIG.apiVersion())
-                .setContentType(ContentType.JSON)
-                .addFilter(allureFilter())
-                .log(LogDetail.ALL)
-                .build();
+        return build(baseSpec(baseUrl));
     }
 
     public static RequestSpecification getRequestSpecWithInvalidToken(String baseUrl) {
-        return new RequestSpecBuilder()
-                .setBaseUri(baseUrl)
-                .setBasePath(ConfigProvider.CONFIG.apiVersion())
-                .setContentType(ContentType.JSON)
-                .addHeader("Authorization", "Bearer " + ConfigProvider.CONFIG.mockInvalidToken())
-                .addFilter(allureFilter())
-                .log(LogDetail.ALL)
-                .build();
+        return build(baseSpec(baseUrl)
+                .addHeader("Authorization", bearer(ConfigProvider.CONFIG.mockInvalidToken())));
     }
 
     public static ResponseSpecification getResponseSpec(int statusCode) {
@@ -70,5 +41,25 @@ public final class Specs {
                 .expectStatusCode(statusCode)
                 .log(LogDetail.ALL)
                 .build();
+    }
+
+    private static RequestSpecBuilder baseSpec(String baseUri) {
+        return new RequestSpecBuilder()
+                .setBaseUri(baseUri)
+                .setBasePath(ConfigProvider.CONFIG.apiVersion())
+                .setContentType(ContentType.JSON);
+    }
+
+    private static RequestSpecification build(RequestSpecBuilder builder) {
+        return builder
+                .addFilter(new AllureRestAssured()
+                        .setRequestTemplate(REQUEST_TEMPLATE)
+                        .setResponseTemplate(RESPONSE_TEMPLATE))
+                .log(LogDetail.ALL)
+                .build();
+    }
+
+    private static String bearer(String token) {
+        return "Bearer " + token;
     }
 }

@@ -8,19 +8,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import todoist.api.models.CommentRequest;
 import todoist.api.models.CommentResponse;
 import todoist.api.steps.CommentSteps;
 import todoist.api.stubs.WireMockStubs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.parallel.ExecutionMode.CONCURRENT;
 
 @Epic("Комментарии")
 @Feature("API: CRUD-операции с комментариями")
 @Tag("api")
 @DisplayName("API: Операции с комментариями Todoist")
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(CONCURRENT)
 public class CommentTest extends BaseApiTest {
 
     private final CommentSteps commentSteps = new CommentSteps();
@@ -40,7 +40,7 @@ public class CommentTest extends BaseApiTest {
                 .build();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"task_id\":\"%s\",\"project_id\":null,\"content\":\"%s\",\"posted_at\":\"2026-07-27T12:00:00Z\"}",
+                "{\"id\":\"%s\",\"item_id\":\"%s\",\"content\":\"%s\",\"posted_at\":\"2026-07-27T12:00:00Z\"}",
                 generatedId, taskId, commentContent
         );
 
@@ -63,7 +63,7 @@ public class CommentTest extends BaseApiTest {
         String content = faker.lorem().sentence();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"task_id\":\"%s\",\"project_id\":null,\"content\":\"%s\",\"posted_at\":\"2026-07-27T12:00:00Z\"}",
+                "{\"id\":\"%s\",\"item_id\":\"%s\",\"content\":\"%s\",\"posted_at\":\"2026-07-27T12:00:00Z\"}",
                 generatedId, taskId, content
         );
 
@@ -84,7 +84,7 @@ public class CommentTest extends BaseApiTest {
         String commentId = faker.internet().uuid();
 
         String mockResponseJson = String.format(
-                "[{\"id\":\"%s\",\"task_id\":\"%s\",\"project_id\":null,\"content\":\"note\",\"posted_at\":\"2026-07-27T12:00:00Z\"}]",
+                "{\"results\":[{\"id\":\"%s\",\"item_id\":\"%s\",\"content\":\"note\",\"posted_at\":\"2026-07-27T12:00:00Z\"}],\"next_cursor\":null}",
                 commentId, taskId
         );
 
@@ -105,7 +105,7 @@ public class CommentTest extends BaseApiTest {
         String updatedContent = faker.lorem().sentence();
 
         String mockResponseJson = String.format(
-                "{\"id\":\"%s\",\"task_id\":null,\"project_id\":null,\"content\":\"%s\",\"posted_at\":\"2026-07-27T12:00:00Z\"}",
+                "{\"id\":\"%s\",\"item_id\":null,\"content\":\"%s\",\"posted_at\":\"2026-07-27T12:00:00Z\"}",
                 generatedId, updatedContent
         );
 

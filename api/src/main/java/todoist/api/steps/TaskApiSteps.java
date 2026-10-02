@@ -6,22 +6,12 @@ import todoist.api.models.TaskRequest;
 import todoist.api.models.TaskResponse;
 
 import static io.restassured.RestAssured.given;
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static todoist.api.specs.Specs.*;
 
 public class TaskApiSteps {
 
-    @Step("Получить список всех активных задач через API (WireMock)")
-    public TaskResponse[] getAllActiveTasks(String baseUrl) {
-        return given()
-                .spec(getRequestSpec(baseUrl))
-                .when()
-                .get("/tasks")
-                .then()
-                .spec(getResponseSpec(200))
-                .extract()
-                .jsonPath()
-                .getObject("results", TaskResponse[].class);
-    }
+    private static final String TASK_SCHEMA = "schemas/task-response-schema.json";
 
     @Step("Получить задачу по ID: {id} через API (WireMock)")
     public TaskResponse getTaskById(String baseUrl, String id) {
@@ -69,15 +59,16 @@ public class TaskApiSteps {
                 .spec(getResponseSpec(204));
     }
 
-    @Step("Создать задачу через API (WireMock)")
-    public TaskResponse createTask(String baseUrl, TaskRequest request) {
+    @Step("Создать задачу через API (WireMock) и проверить контракт ответа по JSON-схеме")
+    public TaskResponse createTaskWithContractCheck(String baseUrl, TaskRequest request) {
         return given()
                 .spec(getRequestSpec(baseUrl))
                 .body(request)
                 .when()
                 .post("/tasks")
                 .then()
-                .spec(getResponseSpec(201))
+                .spec(getResponseSpec(200))
+                .body(matchesJsonSchemaInClasspath(TASK_SCHEMA))
                 .extract().as(TaskResponse.class);
     }
 

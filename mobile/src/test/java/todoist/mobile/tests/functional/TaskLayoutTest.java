@@ -3,7 +3,12 @@ package todoist.mobile.tests.functional;
 import io.qameta.allure.Epic;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import todoist.api.models.ProjectResponse;
 import todoist.api.models.SectionRequest;
 import todoist.api.models.SectionResponse;
@@ -35,30 +40,30 @@ public class TaskLayoutTest extends BaseFunctionalTest {
                     try {
                         sectionSteps.deleteSection(s.getId(), PRODUCTION_REQUEST_SPEC);
                     } catch (Exception e) {
-                        System.err.println("[Cleanup] Не удалось удалить раздел " + s.getId() + ": " + e.getMessage());
+                        log.warn("Не удалось удалить раздел {}: {}", s.getId(), e.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            System.err.println("[Cleanup] Ошибка очистки разделов: " + e.getMessage());
+            log.error("Ошибка очистки разделов: {}", e.getMessage());
         }
     }
 
     @BeforeEach
     void ensureInboxHasMultipleSections() {
-        System.out.println("[Precondition] Очистка старых разделов и подготовка двух новых в Inbox...");
+        log.info("Очистка старых разделов и подготовка двух новых в Inbox");
 
         deleteAutotestSections();
 
         String inboxProjectId = findInboxProjectId();
 
-        for (String sectionName : List.of("Автотест раздел A", "Автотест раздел B")) {
+        for (String sectionName : List.of(SECTION_PREFIX + " A", SECTION_PREFIX + " B")) {
             SectionRequest request = SectionRequest.builder()
                     .projectId(inboxProjectId)
                     .name(sectionName)
                     .build();
             SectionResponse created = sectionSteps.createSection(request, PRODUCTION_REQUEST_SPEC);
-            System.out.println("[Precondition] Создан раздел с ID: " + created.getId());
+            log.info("Создан раздел с ID: {}", created.getId());
         }
     }
 
@@ -109,17 +114,17 @@ public class TaskLayoutTest extends BaseFunctionalTest {
 
     @AfterEach
     void cleanUpAndResetLayout() {
-        System.out.println("[Postcondition] Сброс отображения в Список для изоляции следующих тестов...");
+        log.info("Сброс отображения в Список для изоляции следующих тестов");
         try {
             MainScreen mainScreen = new MainScreen(driver());
             if (mainScreen.isBoardLayoutActiveNow()) {
                 mainScreen.changeLayoutToList();
             }
         } catch (Exception e) {
-            System.err.println("[Postcondition] Ошибка сброса раскладки: " + e.getMessage());
+            log.error("Ошибка сброса раскладки: {}", e.getMessage());
         }
 
-        System.out.println("[Postcondition] Удаление всех тестовых разделов из Inbox...");
+        log.info("Удаление всех тестовых разделов из Inbox");
         deleteAutotestSections();
     }
 }

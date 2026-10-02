@@ -6,6 +6,8 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import todoist.config.ConfigProvider;
 
 import java.nio.file.Path;
@@ -16,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 
 public class SaveSessionTool {
+
+    private static final Logger log = LoggerFactory.getLogger(SaveSessionTool.class);
 
     public static void main(String[] args) throws Exception {
         String debugAddress = System.getProperty("debug.address", "localhost:9222");
@@ -70,7 +74,7 @@ public class SaveSessionTool {
             root.put("localStorage", Map.of("auth_identity", identity.toString()));
 
             new ObjectMapper().writerWithDefaultPrettyPrinter().writeValue(target.toFile(), root);
-            System.out.println("Сессия сохранена: " + target.toAbsolutePath() + " (кук: " + cookies.size() + ")");
+            log.info("Сессия сохранена: {} (кук: {})", target.toAbsolutePath(), cookies.size());
         } finally {
             driver.quit();
         }

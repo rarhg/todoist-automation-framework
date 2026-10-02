@@ -3,9 +3,10 @@ package todoist.mobile.helpers;
 import io.appium.java_client.AppiumDriver;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
-import org.openqa.selenium.Rectangle;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.PointerInput;
 import org.openqa.selenium.interactions.Sequence;
+
 import java.time.Duration;
 import java.util.Collections;
 
@@ -18,7 +19,7 @@ public class GestureHelper {
             }
             swipeUpToScroll(driver);
         }
-        throw new org.openqa.selenium.NoSuchElementException(
+        throw new NoSuchElementException(
                 "Элемент не обнаружен в контейнере меню после максимального числа свайпов: " + maxAttempts
         );
     }
@@ -36,14 +37,6 @@ public class GestureHelper {
         int startX = size.getWidth() / 2;
         int startY = (int) (size.getHeight() * 0.45);
         int endY = (int) (size.getHeight() * 0.85);
-        performSwipe(driver, startX, startY, startX, endY);
-    }
-
-    public static void swipeDownWithinElement(AppiumDriver driver, By containerLocator) {
-        Rectangle rect = driver.findElement(containerLocator).getRect();
-        int startX = rect.getX() + rect.getWidth() / 2;
-        int startY = rect.getY() + (int) (rect.getHeight() * 0.25);
-        int endY = rect.getY() + (int) (rect.getHeight() * 0.75);
         performSwipe(driver, startX, startY, startX, endY);
     }
 

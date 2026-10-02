@@ -16,11 +16,14 @@ public class CommentResponse {
 
     private String id;
 
-    @JsonProperty("task_id")
+    @JsonProperty("item_id")
     private String taskId;
 
     @JsonProperty("project_id")
     private String projectId;
+
+    @JsonProperty("posted_uid")
+    private String postedUid;
 
     private String content;
 

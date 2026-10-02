@@ -18,13 +18,12 @@ public class TaskResponse {
     private String id;
     private String content;
 
-    @JsonProperty("is_completed")
-    private Boolean isCompleted;
+    private Boolean checked;
 
     private Integer priority;
     private List<String> labels;
-    private String url;
+    private DueResponse due;
 
-    @JsonProperty("created_at")
-    private String createdAt;
+    @JsonProperty("added_at")
+    private String addedAt;
 }

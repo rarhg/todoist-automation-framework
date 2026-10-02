@@ -8,6 +8,8 @@ import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 
@@ -15,6 +17,8 @@ public abstract class BaseMobileScreen {
 
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(10);
     private static final Duration DEFAULT_STABILIZE_TIMEOUT = Duration.ofSeconds(5);
+
+    protected final Logger log = LoggerFactory.getLogger(getClass());
 
     protected final AppiumDriver driver;
     protected final WebDriverWait wait;
@@ -37,10 +41,6 @@ public abstract class BaseMobileScreen {
                 .until(ExpectedConditions.visibilityOfElementLocated(locator));
     }
 
-    protected WebElement waitForClickability(By locator) {
-        return waitForClickability(locator, DEFAULT_TIMEOUT);
-    }
-
     protected WebElement waitForClickability(By locator, Duration timeout) {
         return new WebDriverWait(driver, timeout)
                 .until(ExpectedConditions.elementToBeClickable(locator));
@@ -53,22 +53,19 @@ public abstract class BaseMobileScreen {
     protected boolean click(By locator, Duration timeout, boolean required) {
         try {
             waitForElementToStabilize(locator, timeout);
-            WebElement element = waitForClickability(locator, timeout);
-            element.click();
+            waitForClickability(locator, timeout).click();
             return true;
         } catch (RuntimeException e) {
             if (required) {
                 throw e;
             }
-            System.err.println("[Click] Мягкий клик не выполнен (необязательный элемент): "
-                    + locator + " -> " + e.getMessage());
+            log.warn("Мягкий клик не выполнен (необязательный элемент): {} -> {}", locator, e.getMessage());
             return false;
         }
     }
 
     protected void type(By locator, String text) {
         WebElement element = waitForElementToStabilize(locator);
-        waitForVisibility(locator);
         element.clear();
         element.sendKeys(text);
     }
@@ -94,7 +91,7 @@ public abstract class BaseMobileScreen {
             Point currentLocation = element.getLocation();
 
             if (lastLocation != null && currentLocation.equals(lastLocation)) {
-                System.out.println("[Engine] Элемент стабилизировался в точке: " + currentLocation);
+                log.debug("Элемент стабилизировался в точке: {}", currentLocation);
                 break;
             }
 
@@ -110,9 +107,7 @@ public abstract class BaseMobileScreen {
 
     protected boolean isDisplayedWithWait(By locator, Duration timeout) {
         try {
-            return new WebDriverWait(driver, timeout)
-                    .until(ExpectedConditions.visibilityOfElementLocated(locator))
-                    .isDisplayed();
+            return waitForVisibility(locator, timeout).isDisplayed();
         } catch (Exception e) {
             return false;
         }
@@ -120,7 +115,7 @@ public abstract class BaseMobileScreen {
 
     protected void dismissProPromoIfPresent() {
         if (isDisplayedWithWait(proPromoBottomSheet, Duration.ofSeconds(3))) {
-            System.out.println("[Promo] Обнаружен баннер 'Попробуйте Pro бесплатно', закрываем через системный Back...");
+            log.info("Обнаружен баннер 'Попробуйте Pro бесплатно', закрываем через системный Back");
             driver.navigate().back();
             waitUntilPromoGone();
         }

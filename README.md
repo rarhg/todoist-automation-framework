@@ -1,324 +1,320 @@
-# Todoist QA Automation
+<h1>Проект автоматизации тестирования <a target="_blank" href="https://todoist.com/"> Todoist </a> </h1>
 
-[![CI](https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml)
-[![Allure Report](https://img.shields.io/badge/Allure-report-orange)](https://rarhg.github.io/todoist-automation-framework/)
+<p align="center">
+<img src="docs/media/logo/Todoist_logo.png" height="110" alt="Todoist">
+</p>
 
-Дипломный проект по автоматизации тестирования [Todoist](https://todoist.com): API, Web, Mobile (Android) и слой БД в одном Gradle-монорепозитории с единым Allure-отчётом. Автотесты дополнены ручными чек-листами, тест-кейсами и баг-репортами (см. [Ручное тестирование](#ручное-тестирование)).
-
-<!-- Скриншот отчёта: положите файл в docs/ и раскомментируйте
-![Allure Report](docs/allure-report.png)
--->
-
-## Кратко
-
-- **Четыре слоя в одном репозитории:** API, Web, Mobile (Android) и БД с общей конфигурацией и единым отчётом.
-- **Объём:** 54 активных автотеста (+4 отключённых), 34 ручных тест-кейса, 2 оформленных баг-репорта.
-- **CI:** GitHub Actions запускает `api`, `db
-- 
-- 
-- 
-- ` и `web`, общий Allure-отчёт публикуется на GitHub Pages.
-- **Устойчивость:** данные готовятся и удаляются через API, вход в web обходит капчу сохранённой сессией, сбои шлюза (502/503/504) перехватывает retry-фильтр.
-- **Читаемый отчёт:** HTTP-запросы и ответы в Allure отображаются кастомными шаблонами (цветные бейджи, подсветка JSON, готовый cURL).
-- **Быстро посмотреть:** [Allure-отчёт последнего прогона](https://rarhg.github.io/todoist-automation-framework/). API-тесты запускаются без токенов и секретов: `./gradlew :api:test` (нужен только доступ в интернет: два live-теста обращаются к публичному API Todoist без авторизации).
+<p align="center">
+<a href="https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml/badge.svg"></a>
+<a href="https://rarhg.github.io/todoist-automation-framework/"><img alt="Allure Report" src="https://img.shields.io/badge/Allure-report-orange"></a>
+</p>
 
 ## Содержание
++ [Описание](#Описание)
++ [Технологии и инструменты](#Технологии-и-инструменты)
++ [Реализованные проверки](#Реализованные-проверки)
++ [Структура проекта](#Структура-проекта)
++ [Запуск тестов](#Запуск-тестов)
+    + [Допустимые комбинации](#Допустимые-комбинации)
+    + [Локальный запуск тестов](#Локальный-запуск-тестов)
+    + [Удаленный запуск тестов](#Удаленный-запуск-тестов)
++ [Сборка тестов в GitHub Actions](#Сборка-тестов-в-GitHub-Actions)
++ [Интеграция с Allure Report](#интеграция-с-allure-report)
++ [Уведомления в Telegram с использованием бота](#Уведомления-в-Telegram-с-использованием-бота)
++ [Примеры выполнения тестов](#Примеры-выполнения-тестов)
++ [Безопасность и секреты](#Безопасность-и-секреты)
 
-- [Кратко](#кратко)
-- [Стек](#стек)
-- [Структура](#структура)
-- [Что покрыто](#что-покрыто)
-- [Что демонстрирует проект](#что-демонстрирует-проект)
-- [Быстрый старт](#быстрый-старт)
-- [Отчёт Allure](#отчёт-allure)
-- [CI](#ci)
-- [Принятые решения](#принятые-решения)
-- [Известные ограничения](#известные-ограничения)
-- [Архитектура тестов](#архитектура-тестов)
-- [Безопасность и секреты](#безопасность-и-секреты)
-- [Ручное тестирование](#ручное-тестирование)
+## Описание
+Todoist — менеджер задач и проектов с веб-версией, REST API и мобильными приложениями.
+Проект состоит из API, UI (Web), мобильных (Android) и DB-тестов в одном Gradle-монорепозитории. <br/>
 
-## Стек
+**Особенности проекта**:
+- `Page Object` / `Screen Object` шаблон проектирования и слой `Steps` для API
+- Использование технологии `Owner` для гибкой конфигурации (`common.properties` → `local.properties` → `-D`)
+- Возможность запуска тестов: локально, удалённо (Selenoid), в облаке (BrowserStack), по модулям и тегам
+- Мокирование API через `WireMock`, проверка контракта ответа по `JSON Schema`
+- Использование `Faker` для генерации данных
+- Использование `Lombok` для моделей в API тестах
+- Использование собственных компонентов:
+    - `CookieAuthManager` для входа в web по сохранённой сессии (в обход капчи)
+    - `RetryOnServerErrorFilter` для повторов при сбоях 502/503/504 и сетевых ошибках
+    - `AppiumExtension` и `MobileTestWatcher` для управления драйвером и диагностики падений
+- Данные для тестов готовятся и удаляются через реальный API Todoist
+- CI в GitHub Actions, отчёт публикуется на GitHub Pages
+- Уведомление о результатах прохождения в Telegram
+- По итогу прохождения автотестов генерируется Allure отчет. Содержание отчета:
+    - Шаги теста
+    - Скриншот страницы на последнем шаге
+    - Исходный код страницы (web, mobile)
+    - Логи консоли браузера
+    - HTTP-запросы и ответы с подсветкой JSON и готовым cURL
+    - Видео выполнения автотеста (при запуске в Selenoid)
+
+## Технологии и инструменты
+
+<div align="center">
+<a href="https://www.jetbrains.com/idea/"><img alt="IntelliJ IDEA" height="50" src="docs/media/logo/Idea.svg" width="50"/></a>
+<a href="https://github.com/"><img alt="GitHub" height="50" src="docs/media/logo/GitHub.svg" width="50"/></a>
+<a href="https://www.java.com/"><img alt="Java" height="50" src="docs/media/logo/Java.svg" width="50"/></a>
+<a href="https://gradle.org/"><img alt="Gradle" height="50" src="docs/media/logo/Gradle.svg" width="50"/></a>
+<a href="https://junit.org/junit5/"><img alt="JUnit 5" height="50" src="docs/media/logo/Junit5.svg" width="50"/></a>
+<a href="https://selenide.org/"><img alt="Selenide" height="50" src="docs/media/logo/Selenide.svg" width="50"/></a>
+<a href="https://aerokube.com/selenoid/"><img alt="Selenoid" height="50" src="docs/media/logo/Selenoid.svg" width="50"/></a>
+<a href="https://rest-assured.io/"><img alt="REST Assured" height="50" src="docs/media/logo/RestAssured.svg" width="50"/></a>
+<a href="https://wiremock.org/"><img alt="WireMock" height="50" src="docs/media/logo/Wiremock.svg" width="50"/></a>
+<a href="https://www.browserstack.com/"><img alt="BrowserStack" height="50" src="docs/media/logo/Browserstack.svg" width="50"/></a>
+<a href="https://appium.io/"><img alt="Appium" height="50" src="docs/media/logo/Appium.svg" width="50"/></a>
+<a href="https://www.docker.com/"><img alt="Docker" height="50" src="docs/media/logo/Docker.svg" width="50"/></a>
+<a href="https://testcontainers.com/"><img alt="Testcontainers" height="50" src="docs/media/logo/Testcontainers.png" width="50"/></a>
+<a href="https://www.postgresql.org/"><img alt="PostgreSQL" height="50" src="docs/media/logo/Postgresql.svg" width="50"/></a>
+<a href="https://github.com/allure-framework/"><img alt="Allure Report" height="50" src="docs/media/logo/Allure.svg" width="50"/></a>
+<a href="https://telegram.org/"><img alt="Telegram" height="50" src="docs/media/logo/Telegram.svg" width="50"/></a>
+</div>
 
 | Назначение | Технологии |
 |------------|------------|
 | Язык и сборка | Java 17, Gradle |
 | Тестовый фреймворк | JUnit 5 (5.10.2), AssertJ (3.25.3), Datafaker (2.2.2), Lombok |
 | API | REST Assured 5.4.0, WireMock 3.5.4 |
-| Web | Selenide 7.3.0 (Selenium 4.22.0) |
+| Web | Selenide 7.3.0 (Selenium 4.22.0), Selenoid |
 | Mobile | Appium java-client 9.2.2, UiAutomator2, BrowserStack |
 | База данных | Testcontainers 1.21.4, PostgreSQL 16 |
 | Отчётность | Allure 2.27.0 |
 | Конфигурация | OWNER |
-| CI/CD | GitHub Actions, GitHub Pages |
-
-## Структура
-
-```
-todoist-qa-automation
-├── .github/workflows/ci.yml — CI: api, db, web + публикация отчёта
-├── common   — конфигурация: ProjectConfig, ConfigProvider, config/common.properties
-├── api      — модели, Specs, Steps, WireMock-стабы, Allure-шаблоны (main) и API-тесты (test)
-├── web      — Selenide: pages, components, helpers (сессия), тесты
-├── mobile   — Appium: screens, helpers, тесты (локальное устройство и BrowserStack)
-├── db       — Testcontainers + PostgreSQL: DAO, сервис синхронизации, тест
-├── config/allure — categories.json и environment.properties для отчёта
-└── docs
-    └── manual — ручное тестирование: чек-листы, тест-кейсы, баг-репорты
-```
-
-Зависимости модулей: `api → common`; `web`, `mobile`, `db → common + api` (`api` нужен для подготовки и очистки данных через реальный API).
-
-Взаимодействие слоёв:
-
-- `api` проверяет работу с REST API на WireMock; к реальному Todoist API обращается только `AuthApiTest`.
-- `web` управляет браузером через Selenide, `mobile` — приложением через Appium.
-- `web`, `mobile` и `db` используют модуль `api`, чтобы готовить и удалять данные через реальный API Todoist.
-- `db` поднимает PostgreSQL в Testcontainers и синхронизирует в него задачи из API.
-
-## Что покрыто
-
-| Слой | Тег | Тестов | Что проверяется |
-|------|-----|--------|-----------------|
-| API | `api` | 29 | CRUD по проектам, задачам, разделам, меткам и комментариям на WireMock; негативные сценарии; контракт задачи по JSON-схеме |
-| Auth API | `api`, `live` | 2 | Запросы к реальному API без токена и с невалидным токеном (ожидается 401/403) |
-| Web | `web` | 7 (+4 `@Disabled`) | Создание, выполнение, удаление и редактирование задачи; создание проекта; навигация между списками. Тесты входа отключены из-за капчи |
-| Mobile | `android` / `androidLocal` | 15 | Вход, негативная регистрация, выход, создание задачи и NLP-распознавание дат (5 параметризованных кейсов), выполнение задачи, календарь, раскладка Список/Доска |
-| DB | `db` | 1 | Синхронизация активных и завершённых задач из API в PostgreSQL |
-| **Итого** | | **54** активных | |
-
-Ручное тестирование: 34 тест-кейса (10 web + 24 mobile), 2 чек-листа, 2 баг-репорта.
-
-## Что демонстрирует проект
-
-| Навык | Где посмотреть |
-|-------|----------------|
-| Тестирование REST API, негативные сценарии, проверка контракта по JSON-схеме | модуль `api`: `TaskTest`, `ProjectTest`, `task-response-schema.json` |
-| Мокирование внешнего сервиса | `WireMockStubs`, `BaseApiTest` |
-| UI-автоматизация, Page Object | модуль `web`: `pages`, `components` |
-| Мобильная автоматизация | модуль `mobile`: `screens`, `AppiumExtension`, `TaskCreationTest` |
-| Параметризованные тесты | `NlpDataProvider`, `NavigationUiTest` |
-| Тестирование на БД | модуль `db`: Testcontainers, `SyncedTaskDao`, `TaskSyncService` |
-| Устойчивость к нестабильному внешнему сервису | `RetryOnServerErrorFilter`, `CookieAuthManager` |
-| Кастомная отчётность | `api/src/main/resources/tpl/*.ftl`, `Specs`, `categories.json` |
-| CI/CD | `.github/workflows/ci.yml`, Allure на GitHub Pages |
-| Конфигурация и секреты | OWNER, `local.properties`, GitHub Secrets |
-| Ручное тестирование, тест-дизайн, баг-репорты | [`docs/manual`](docs/manual) |
-
-## Быстрый старт
-
-### Требования
-
-- JDK 17
-- Docker (для модуля `db`)
-- Chrome (для `web`)
-- Android-устройство или эмулятор, Node.js с Appium и APK (для `mobile`, см. ниже)
-
-### Конфигурация
-
-Настройки читаются в порядке от низшего приоритета к высшему:
-
-1. `common/src/main/resources/config/common.properties` — в git: URL, версия API, параметры браузера и Appium, несекретные параметры BrowserStack.
-2. `common/src/main/resources/config/local.properties` — **вне git**: токены, логин и пароль, ключи BrowserStack, параметры вашей машины.
-3. Системные свойства `-D` в командной строке.
-
-Для нового клона скопируйте шаблон `local.properties.example` в `common/src/main/resources/config/local.properties` и заполните:
-
-```properties
-api.token=...          # токен API тестового аккаунта Todoist
-test.email=...
-test.password=...
-# для mobile:
-local.device.name=...  # имя устройства/эмулятора (adb devices)
-android.sdk.home=...   # путь к Android SDK
-# для BrowserStack:
-bs.username=...
-bs.access.key=...
-bs.app.url=...
-```
-
-Параметры через командную строку пробрасываются в тестовую JVM, если ключ начинается с `web.`, `api.`, `test.` либо это `browser`, `is.remote`, `remote.url`, `auth.state.file`. Например, чтобы увидеть окно браузера:
-
-```
-./gradlew :web:test -Dweb.headless=false
-```
-
-По умолчанию `web.headless=true`. Для отладки удобнее поставить `web.headless=false` в `local.properties`.
-
-### Запуск
-
-```
-./gradlew :api:test              # API-тесты (моки + live-проверка авторизации)
-./gradlew :db:test               # DB-тесты (нужен Docker и api.token)
-./gradlew :web:test              # Web-тесты (нужна сохранённая сессия, см. ниже)
-./gradlew :mobile:androidLocal   # Mobile на локальном устройстве или эмуляторе
-./gradlew :mobile:android        # Mobile в BrowserStack
-```
-
-Запуск одного класса: `./gradlew :web:test --tests "*TaskUiTest"`.
-
-### Web: вход по сохранённой сессии
-
-Форма входа Todoist защищена капчей и отклоняет автоматизированный браузер, поэтому web-тесты не логинятся сами. Вход выполняется вручную один раз, а сессия сохраняется в файл `web/auth-state.json` (он в `.gitignore`).
-
-1. Запустите Chrome с отладочным портом и отдельным профилем:
-   ```
-   chrome.exe --remote-debugging-port=9222 --user-data-dir="C:\chrome-todoist-profile"
-   ```
-2. В этом окне войдите на app.todoist.com вручную (капчу проходите руками).
-3. Выполните `./gradlew :web:saveSession`.
-
-Сессия живёт около двух недель, после этого шаги нужно повторить. В CI содержимое файла передаётся через секрет `AUTH_STATE_JSON`.
-
-### Mobile: что нужно для запуска
-
-- Android-устройство или эмулятор с русской локалью (тесты используют русские тексты интерфейса).
-- Установленный Appium с драйвером UiAutomator2 и Android SDK (путь в `android.sdk.home`).
-- APK Todoist. В репозитории его нет намеренно (проприетарный бинарник стороннего
-  приложения, раздувает историю git и не нужен для сборки/CI). Получить его можно
-  с собственного устройства, где приложение уже установлено через Google Play:
-
-  ```
-  adb shell pm path com.todoist
-  ```
-
-  Команда вернёт список сплитов (base.apk + config-сплиты под архитектуру/локаль/
-  плотность экрана), например:
-  ```
-  package:/data/app/~~xxxx==/com.todoist-yyyy==/base.apk
-  package:/data/app/~~xxxx==/com.todoist-yyyy==/split_config.ru.apk
-  package:/data/app/~~xxxx==/com.todoist-yyyy==/split_config.arm64_v8a.apk
-  ```
-
-  Каждый пулните на диск (`adb pull <путь>`), затем соберите сплиты в единый
-  устанавливаемый APK (например, инструментом APKEditor: `merge`). Готовый файл
-  положите в `mobile/src/test/resources/apps/todoist.apk` — этот путь читается
-  из `local.apk.path` в `common.properties` и используется только при запуске
-  с флагом `-Dclean.install=true`; по умолчанию тесты используют уже
-  установленное на устройстве приложение и APK не требуется вовсе.
-- Для `:mobile:android` — аккаунт BrowserStack и ключи `bs.*` в `local.properties`.
-
-## Отчёт Allure
-
-Результаты складываются в `allure-results`, файлы `categories.json` и `environment.properties` копируются туда автоматически после каждого тестового таска. Открывать сгенерированный `index.html` двойным кликом (`file://`) нельзя: данные подгружаются через `fetch` и блокируются браузером (CORS). Используйте встроенный сервер:
-
-```
-./gradlew allureServe
-```
-
-Отчёт последнего прогона в CI: https://rarhg.github.io/todoist-automation-framework/
-
-Падения классифицируются по `config/allure/categories.json`: дефекты продукта, проблемы окружения и данных, хрупкость UI-локаторов, ошибки инфраструктуры, пропущенные тесты.
-
-**Кастомные шаблоны HTTP-вложений.** Каждый запрос и ответ REST Assured попадает в отчёт через собственные FreeMarker-шаблоны `api/src/main/resources/tpl/todoist-http-request.ftl` и `todoist-http-response.ftl`: цветной бейдж метода (GET/POST/PUT/PATCH/DELETE) и статус-кода (2xx–5xx), таблицы заголовков и cookies, подсветка JSON, готовый cURL для воспроизведения. Шаблоны подключаются в `Specs.allureFilter()` и работают во всех слоях, которые ходят в API (шаблоны подгружают highlight.js с cdnjs; без интернета подсветка отключается, содержимое остаётся читаемым).
-
-> Allure рендерит то, что уже лежит в `allure-results`. После правки шаблонов выполните `./gradlew :api:clean :api:test`, иначе в отчёте останется старая версия вложений.
-
-## CI
-
-GitHub Actions (`.github/workflows/ci.yml`) запускается при push и pull request в `main`, а также вручную (`workflow_dispatch`). Новый push отменяет незавершённый прогон той же ветки. Джобы `api`, `db` и `web` независимы; `report` ждёт их все, собирает результаты в один отчёт Allure и публикует его на GitHub Pages (для pull request отчёт не публикуется; при упавших тестах публикуется).
-
-**Настройка репозитория:**
-
-| Что | Где | Для чего |
-|-----|-----|----------|
-| Секрет `API_TOKEN` | Settings → Secrets and variables → Actions | `db`, `web` (подготовка и очистка данных через реальный API) |
-| Секрет `AUTH_STATE_JSON` | там же (содержимое `web/auth-state.json`) | `web` (сессия браузера) |
-| Pages → Source: **GitHub Actions** | Settings → Pages | без этого падает `deploy-pages` в джобе `report` |
-
-- Токен API маскируется в результатах Allure перед публикацией отчёта (джобы `db` и `web`).
-- Джоба `db` вынесена в отдельную `concurrency`-группу `todoist-real-account`: два прогона не работают с аккаунтом в db-слое одновременно. Между `db` и `web` внутри одного прогона синхронизации нет: тесты создают данные с уникальными именами и удаляют только свои.
-- Секреты недоступны в pull request из форков, поэтому `db` и `web` в них падают: это ожидаемо.
-- Секрет `AUTH_STATE_JSON` протухает вместе с сессией (около двух недель) и обновляется вручную; иначе `web`-джоба начнёт падать без изменений в коде (см. [Web: вход по сохранённой сессии](#web-вход-по-сохранённой-сессии)).
-- Mobile в CI не запускается: нужны физическое устройство/эмулятор и поднятый Appium, это не то, что можно получить на GitHub-раннере. Этот слой запускается только локально.
-
-## Принятые решения
-
-**Монорепозиторий.** API, Web, Mobile и DB лежат в одном репозитории с общей конфигурацией и единым отчётом вместо трёх отдельных репозиториев.
-
-**WireMock и тег `live`.** Основная часть API-тестов идёт на WireMock: они быстрые и не зависят от внешнего сервиса. Проверка авторизации (`AuthApiTest`, теги `api` и `live`) сделана на реальном API, потому что мок вернул бы 401 просто потому, что так настроен.
-
-**Параллельность только у API.** Параллельное выполнение (`junit.jupiter.execution.parallel.enabled`) включено только для модуля `:api`. Каждый тестовый класс поднимает собственный изолированный `WireMockServer` на случайном порту (`BaseApiTest`, `@TestInstance(PER_CLASS)`), поэтому классы не пересекаются. Внутри класса стабы разных тестов на один эндпоинт не должны конфликтовать: позитивные стабы имеют приоритет 1, негативные служат запасными. В web-слое параллельность отключена осознанно: тесты используют общий тестовый аккаунт и один Inbox, и параллельные потоки создают гонки за DOM и данные. Для включения потребуются отдельные аккаунты на поток либо изоляция сценариев в отдельных проектах (так уже устроен `ProjectUiTest`).
-
-**Капча на форме входа.** Форма входа Todoist защищена капчей и отклоняет автоматизированный браузер. Отсюда два следствия: класс `LoginTest` помечен `@Disabled`, а сценарии входа проверяются вручную (см. ручные тест-кейсы); остальные web-тесты не логинятся через форму вовсе, а получают сессию подстановкой сохранённых кук/localStorage в браузер (`CookieAuthManager`, `SaveSessionTool` — подробности в разделе «Web: вход по сохранённой сессии» выше). В CI тот же файл сессии передаётся через секрет `AUTH_STATE_JSON`.
-
-**Очистка данных в mobile.** `BaseMobileSuite` после каждого теста удаляет все активные задачи аккаунта. Это сделано намеренно: тестовый аккаунт используется только автотестами, а mobile-тесты не запускаются параллельно. Не запускайте mobile одновременно с web и db на одном аккаунте.
-
-**Повторы при сбоях шлюза.** Тесты web и mobile готовят и чистят данные через реальный API Todoist, а он иногда отвечает 502/503/504 (ошибка CloudFront, запрос до бэкенда не дошёл). Чтобы такой сбой не валил прогон, `PRODUCTION_REQUEST_SPEC` содержит `RetryOnServerErrorFilter`: до 3 попыток с нарастающей паузой. Повторяются только 502/503/504. Ответы 500 и 4xx не повторяются, чтобы не скрывать реальные баги. Моки WireMock фильтр не затрагивает.
-
-## Известные ограничения
-
-- **Web-сессия протухает.** Файл сессии живёт около двух недель и обновляется вручную (локально и в секрете `AUTH_STATE_JSON`).
-- **Вход через UI не автоматизирован.** Капча Todoist; тесты `LoginTest` отключены, сценарии входа проверяются вручную.
-- **Mobile только локально.** В CI нет устройства и Appium; запуск в BrowserStack возможен, но в пайплайн не включён.
-- **Русская локаль.** Локаторы web и mobile опираются на русские тексты интерфейса; на другой локали тесты не пройдут.
-- **Один общий аккаунт.** Тесты работают с реальным аккаунтом Todoist, параллельность в web и mobile выключена. Mobile-очистка удаляет **все** активные задачи аккаунта, поэтому используйте отдельный тестовый аккаунт.
-- **Зависимость от реального сервиса.** Web, mobile и db ходят в боевой API Todoist, а `AuthApiTest` — в публичный. Кратковременные сбои шлюза сглаживает retry-фильтр, но длительная недоступность сервиса уронит прогон.
-- **Pull request из форков.** Секреты недоступны, `db` и `web` в них не пройдут.
-- **Предупреждение о CDP в логах.** Сообщение «Unable to find CDP implementation matching 153» появляется из-за новой версии Chrome относительно Selenium 4.22.0 и на результаты тестов не влияет.
-
-## Архитектура тестов
-
-Во всех слоях один подход: тесты не работают с локаторами и HTTP-запросами напрямую, а обращаются к слою абстракций (Steps, Page Object, Screen). Подготовка и очистка данных вынесены в базовые классы и хуки `@BeforeEach` / `@AfterEach`. Отчёт строится через аннотации Allure `@Epic`, `@Feature`, `@Story`, `@DisplayName` и `@Step`.
-
-**API (WireMock)**
-- Модели запросов и ответов лежат в `todoist.api.models` (Lombok + Jackson).
-- Steps (`todoist.api.steps`) инкапсулируют вызовы REST Assured и используют спецификации из `Specs`.
-- Стабы собраны в `WireMockStubs`. Каждый тестовый класс, наследник `BaseApiTest`, поднимает свой WireMock на случайном порту.
-- Тесты лежат в `todoist.api.tests` и помечены `@Tag("api")`.
-
-**Web (Selenide)**
-- Page Object: страницы в `todoist.web.pages` (наследники `BasePage`) и компоненты в `todoist.web.components` (модальные окна, панели, сайдбар).
-- `BaseWebTest` настраивает браузер и подставляет сохранённую сессию через `CookieAuthManager`.
-- Данные для теста создаются и удаляются через API Steps, поэтому UI проверяет только то, что нужно проверить.
-- Тесты помечены `@Tag("web")`.
-
-**Mobile (Appium)**
-- Экраны лежат в `todoist.mobile.screens` и наследуют `BaseMobileScreen`, где собраны ожидания, клики и стабилизация элементов.
-- `AppiumExtension` поднимает драйвер (локально или BrowserStack), `BaseMobileSuite` чистит данные через API после каждого теста.
-- Предусловия авторизации задают `BaseFunctionalTest`, `BaseAuthTest` и `BaseAccountTest`; состояние приложения определяет `AppStateResolver`.
-- `MobileTestWatcher` прикладывает к отчёту скриншот и page source при падении.
-- Тесты помечены `@Tag("androidLocal")`.
-
-**DB (Testcontainers)**
-- `BaseDbTest` поднимает PostgreSQL 16 в контейнере и накатывает схему из `schemas/db/schema.sql`.
-- `SyncedTaskDao` работает с таблицей, `TaskSyncService` синхронизирует задачи из API.
-- Тесты помечены `@Tag("db")`.
-
-Новый тест добавляется по той же схеме: сначала шаги или страница (экран), затем сам тест, наследующий базовый класс своего слоя.
-
-## Безопасность и секреты
-
-- Токены, логин и пароль, ключи BrowserStack и файл сессии хранятся вне git: `local.properties` и `web/auth-state.json` перечислены в `.gitignore`. В репозитории лежит только шаблон `local.properties.example`.
-- В CI секреты передаются через GitHub Secrets (`API_TOKEN`, `AUTH_STATE_JSON`), а токен API маскируется в результатах Allure перед публикацией отчёта.
-- APK приложения в репозиторий не добавляется (`*.apk` в `.gitignore`).
-- **Если секрет утёк** (попал в коммит, чат или публичный отчёт): перевыпустите токен Todoist, смените пароль аккаунта, пересоздайте ключ BrowserStack, обновите секреты в GitHub и, если файл был закоммичен, вычистите его из истории git. Проверить, попадал ли файл в историю: `git log --all -- web/auth-state.json`.
-
-## Ручное тестирование
-
-Часть функциональности не автоматизирована: вход в web (капча), push-уведомления, голосовой ввод, поведение ОС на Android. Она покрыта ручными чек-листами, тест-кейсами и баг-репортами, которые лежат в [`docs/manual`](docs/manual).
+| CI/CD | GitHub Actions, GitHub Pages, Telegram |
+
+## Реализованные проверки
+
+**Итого: 54 активных автотеста (+4 отключённых), 34 ручных тест-кейса, 2 оформленных баг-репорта.**
+
+### Api (WireMock) — 29 тестов
+- [x] Создание, получение, обновление и удаление проекта
+- [x] Создание, получение, обновление, закрытие и удаление задачи
+- [x] Проверка контракта ответа задачи по JSON-схеме
+- [x] Создание, получение (один / список), обновление и удаление метки
+- [x] Создание, получение (один / список), обновление и удаление комментария
+- [x] Создание, обновление и удаление раздела
+- [x] Запрос без токена и с невалидным токеном (401)
+- [x] Пустое имя проекта, раздел без имени, невалидный `project_id` (400)
+- [x] Получение задачи и раздела по несуществующему ID (404)
+
+### Api (реальный API, тег `live`) — 2 теста
+- [x] Создание проекта без авторизационного токена (401/403)
+- [x] Создание проекта с невалидным токеном (401/403)
+
+### Web — 7 тестов (+4 `@Disabled`)
+- [x] Создание задачи через UI и проверка её появления во Входящих
+- [x] Выполнение задачи кликом по чекбоксу
+- [x] Удаление задачи через контекстное меню с подтверждением
+- [x] Изменение названия задачи через панель деталей
+- [x] Создание проекта через UI
+- [x] Навигация между списками «Входящие» / «Сегодня» (@ParameterizedTest)
+- [ ] Сценарии входа (`LoginTest`) — отключены из-за капчи, проверяются вручную
+
+### Mobile (Android) — 15 тестов
+- [x] Успешный вход в приложение по Email
+- [x] Неуспешная регистрация: невалидный Email, короткий пароль, пустые поля
+- [x] Выход из аккаунта
+- [x] Создание простой задачи через UI
+- [x] «Умное» распознавание даты (NLP) при вводе задачи (@ParameterizedTest, 5 кейсов)
+- [x] Отметка задачи выполненной по динамическому локатору
+- [x] Выбор даты в календаре-ленте «Предстоящие»
+- [x] Переключение раскладки Список ↔ Доска и горизонтальный свайп между колонками
+
+### DB (Testcontainers) — 1 тест
+- [x] Закрытие задачи в Todoist отражается статусом `COMPLETED` в локальной PostgreSQL
+
+### Ручные проверки
 
 | Артефакт | Web | Mobile (Android) |
 |----------|-----|------------------|
-| Чек-лист | [checklist-web.md](docs/manual/checklist-web.md) | [checklist-mob.md](docs/manual/checklist-mob.md) |
-| Тест-кейсы | [test-cases-web.md](docs/manual/test-cases-web.md) — 10 кейсов (WEB-01…WEB-10) | [test-cases-mob.md](docs/manual/test-cases-mob.md) — 24 кейса (MOB-01…MOB-17.3) |
+| Чек-лист | [checklist-web.md](manual/web/checklist-web.md) | [checklist-mob.md](manual/mobile/checklist-mob.md) |
+| Тест-кейсы | [test-cases-web.md](manual/web/test-cases-web.md) — 10 кейсов | [test-cases-mob.md](manual/mobile/test-cases-mob.md) — 24 кейса |
 
-**Окружение прогона:**
+- **Web:** вход и выход, поиск, фильтры, редактирование задачи, drag-n-drop, undo, разделы, метки, комментарии, массовые действия
+- **Mobile:** push-уведомления, голосовой ввод Ramble, офлайн-режим, Process Death, смена сети и часового пояса, масштаб шрифтов, share-меню, поиск, негативные сценарии ввода
 
-- Web: Chrome 153, `https://app.todoist.com`, тестовый аккаунт проекта.
-- Mobile: Android 16, POCO C85, официальное приложение Todoist, тестовый аккаунт проекта.
-
-**Результаты:** все 10 web-кейсов пройдены. В mobile пройдено 23 из 24 кейсов, MOB-02.2 не пройден (баг BUG-01). Кейс MOB-02.1 формально пройден, но выявил расхождение с ожидаемым поведением (баг BUG-02).
+Окружение прогона: Web — Chrome 153; Mobile — Android 16, POCO C85.
 
 ### Найденные дефекты
 
 | ID | Название | Severity | Priority | Статус |
 |----|----------|----------|----------|--------|
-| [BUG-01](docs/manual/BUG-001.md) | Голосовой ввод: повторное упоминание текста задачи перезаписывает её вместо создания новой (MOB-02.2) | Major | High | Open |
-| [BUG-02](docs/manual/BUG-002.md) | Индикатор записи голоса не отражает фактическую паузу при входящем звонке (MOB-02.1) | Minor | Low | Open |
+| [BUG-01](manual/bug-reports/BUG-001.md) | Голосовой ввод: повторное упоминание текста задачи перезаписывает её вместо создания новой | Major | High | Open |
+| [BUG-02](manual/bug-reports/BUG-002.md) | Индикатор записи голоса не отражает фактическую паузу при входящем звонке | Minor | Low | Open |
 
-### Наблюдения без оформления в баг
+## Структура проекта
 
-- Поиск в мобильном приложении не находит задачу при опечатке: нечёткий поиск не реализован, нужно точное совпадение подстроки (MOB-17.1). Кейс шаг 2 формулировался как фиксация фактического поведения.
-- У голосового ввода (Ramble) есть месячная квота сеансов, помимо лимита 3 минуты на один сеанс. Поведение при исчерпании квоты не проверялось (MOB-02.3).
-- При смене часового пояса приложение показывает диалог с запросом на смену пояса на всех устройствах; проверен только один из трёх вариантов ответа (MOB-11).
+```
+todoist-qa-automation
+├── .github/workflows/ci.yml — CI: api, db, web + публикация отчёта
+├── common   — конфигурация: ProjectConfig, ConfigProvider, config/*.properties
+├── api      — модели, Specs, Steps, WireMock-стабы, Allure-шаблоны и API-тесты
+├── web      — Selenide: pages, components, helpers (сессия), тесты
+├── mobile   — Appium: screens, helpers, тесты
+├── db       — Testcontainers + PostgreSQL: DAO, сервис синхронизации, тест
+├── config/allure — categories.json и environment.properties для отчёта
+├── selenoid — docker-compose и browsers.json для удалённого запуска web
+├── manual   — чек-листы, тест-кейсы, баг-репорты
+└── docs/media — логотипы, скриншоты и гифки
+```
+
+Зависимости модулей: `api → common`; `web`, `mobile`, `db → common + api`.
+
+## Запуск тестов
+> [!NOTE]
+> Убедитесь, что установлены JDK 17, Docker (для `db` и Selenoid) и Chrome (для `web`)
+
+> [!IMPORTANT]
+> Перед запуском создайте `common/src/main/resources/config/local.properties` по шаблону `local.properties.example` и пропишите данные **отдельного тестового аккаунта** Todoist: `api.token`, `test.email`, `test.password`. Mobile-тесты после каждого теста удаляют все активные задачи аккаунта.
+
+Настройки читаются от низшего приоритета к высшему: `common.properties` (в git) → `local.properties` (вне git) → параметры `-D`.
+
+### Допустимые комбинации
+
+```mermaid 
+flowchart LR
+    A(gradlew) --> B{Выбрать модуль}
+    B --> C[":api:test"]
+    B --> D[":db:test"]
+    B --> E[":web:test"]
+    B --> F[":mobile"]
+    E --> G["-Dweb.headless=false"]
+    E --> H["-Dis.remote=true -Dremote.url=..."]
+    F --> I[androidLocal]
+    F --> J[android]
+    I --> K[локальное устройство или эмулятор]
+    J --> L[BrowserStack]
+```
+
+### Локальный запуск тестов
+
+#### API
+```
+./gradlew :api:test
+```
+
+#### DB
+```
+./gradlew :db:test
+```
+Нужны запущенный Docker и `api.token`.
+
+#### WEB
+```
+./gradlew :web:test
+```
+Нужна сохранённая сессия: форма входа защищена капчей, поэтому вход выполняется вручную один раз.
+
+1. Запустите Chrome с отладочным портом:
+   ```
+    Start-Process "chrome.exe" -ArgumentList "--remote-debugging-port=9222", "--user-data-dir='C:\chrome-todoist-profile'"
+   ```
+2. В этом окне войдите на app.todoist.com вручную
+3. Выполните `./gradlew :web:saveSession` — сессия сохранится в `web/auth-state.json` (живёт около двух недель)
+
+#### Mobile
+```
+./gradlew :mobile:androidLocal
+./gradlew :mobile:android
+```
+- [ ] <code>androidLocal</code> : локальное устройство или эмулятор (Appium, Android SDK, `local.device.name`)
+- [ ] <code>android</code> : облачная платформа <a target="_blank" href="https://www.browserstack.com/"> BrowserStack </a> (ключи `bs.*`)
+
+<details>
+   <summary>Дополнительные команды:</summary>
+
+1. Открыть Allure-отчёт в браузере:
+```
+./gradlew allureServe
+```
+2. Пересобрать результаты после правки Allure-шаблонов:
+```
+./gradlew :api:clean :api:test
+```
+
+</details>
+
+### Удаленный запуск тестов
+Web-тесты можно выполнить в браузере, запущенном в Docker-контейнере Selenoid:
+
+1. Создайте `selenoid/.env` по шаблону `selenoid/.env.example`
+2. Скачайте образы: `docker pull selenoid/vnc_chrome:128.0` и `docker pull selenoid/video-recorder:latest-release`
+3. Из папки `selenoid` выполните `docker compose up -d`
+4. Запустите тесты из корня проекта (UI Selenoid: `http://localhost:8080`):
+```
+./gradlew :web:test "-Dis.remote=true" "-Dremote.url=http://localhost:4444/wd/hub" "-Dweb.headless=false"
+```
+
+Параметры, которыми можно управлять:
+```
+-Dbrowser - наименование браузера. По умолчанию CHROME
+-Dbrowser.version - номер версии браузера
+-Dbrowser.size - размер окна браузера. По умолчанию 1920x1080
+-Dweb.headless - режим без окна. По умолчанию true
+-Dis.remote - запуск в удалённом браузере
+-Dremote.url - адрес удалённого сервера
+```
+
+> [!TIP]
+> В Windows PowerShell каждый аргумент `-D...` берите в кавычки.
+
+## Сборка тестов в <b><a target="_blank" href="https://github.com/rarhg/todoist-automation-framework/actions/workflows/ci.yml">GitHub Actions</a></b>
+
+>Пайплайн запускается при push и pull request в `main`, а также вручную через `Run workflow`
+
+<img src="docs/media/screenshots/github-actions-run.png" alt="Прогон GitHub Actions">
+
+| Джоба | Что делает |
+|-------|------------|
+| `api` | `:api:test` — WireMock + live-проверка авторизации |
+| `db` | `:db:test` — Testcontainers |
+| `web` | `:web:test` — Selenide, сессия из секрета `AUTH_STATE_JSON` |
+| `report` | Собирает результаты, публикует Allure-отчёт на GitHub Pages и отправляет уведомление в Telegram |
+
+**Секреты репозитория:** `API_TOKEN`, `AUTH_STATE_JSON`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. В Settings → Pages источник — **GitHub Actions**.
+
+Mobile в CI не запускается: нужны устройство или эмулятор и Appium.
+
+## Интеграция с <b><a target="_blank" href="https://rarhg.github.io/todoist-automation-framework/">Allure report</a></b>
+
+`OVERVIEW` — общее количество тестов и диаграмма успешных, упавших и сломавшихся <br/>
+`CATEGORIES` — распределение неудачных тестов по типам дефектов (дефекты продукта, проблемы окружения, хрупкость локаторов, инфраструктура, пропущенные) <br/>
+`SUITES` — распределение тестов по Epic / Feature / Story
+
+<img src="docs/media/screenshots/allure-overview.png" alt="Allure overview">
+
+#### HTTP-вложения
+Каждый запрос и ответ REST Assured попадает в отчёт через собственные шаблоны `todoist-http-request.ftl` и `todoist-http-response.ftl`: цветной бейдж метода и статус-кода, таблицы заголовков, подсветка JSON, готовый cURL.
+
+<img src="docs/media/screenshots/allure-request.png" alt="HTTP-запрос в Allure">
+<img src="docs/media/screenshots/allure-response.png" alt="HTTP-ответ в Allure">
+
+## Уведомления в Telegram с использованием бота
+
+> Бот после завершения сборки отправляет сообщение с результатами прогона
+
+<p align="center">
+<img src="docs/media/screenshots/telegram-notification.png" alt="Уведомление в Telegram" width="420">
+</p>
+
+В уведомлении 43 сценария, а не 54: mobile-тесты (15) в CI не запускаются, а 4 пропущенных — отключённые тесты `LoginTest`.
+
+## Примеры выполнения тестов
+
+> Web-тест в Selenoid (создание задачи)
+<p align="center">
+  <img src="docs/media/gif/selenoid-create-task.gif" alt="Выполнение web-теста в Selenoid">
+</p>
+
+> Mobile-тест в BrowserStack (раскладка Список / Доска)
+<p align="center">
+  <img src="docs/media/gif/browserstack-task-layout.gif" alt="Выполнение mobile-теста в BrowserStack">
+</p>
+
+## Безопасность и секреты
+
+- Токены, логин и пароль, ключи BrowserStack и файл сессии хранятся вне git: `local.properties` и `web/auth-state.json` в `.gitignore`. В репозитории лежат только шаблоны `local.properties.example` и `selenoid/.env.example`
+- В CI секреты передаются через GitHub Secrets, токен API маскируется в результатах Allure перед публикацией
+- Запросы к API логируются в консоль Gradle полностью, включая заголовок `Authorization`: не публикуйте скриншоты консоли
+- Если секрет утёк: перевыпустите токен Todoist, смените пароль, пересоздайте ключ BrowserStack, обновите секреты в GitHub и вычистите файл из истории git

@@ -1,9 +1,10 @@
 package todoist.api.stubs;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
+import com.github.tomakehurst.wiremock.matching.StringValuePattern;
 import todoist.config.ConfigProvider;
-
-import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 
@@ -15,117 +16,82 @@ public final class WireMockStubs {
     }
 
     public static void stubPostSuccess(WireMockServer wireMock, String endpoint, String expectedJsonPathField, String expectedValue, String responseBodyJson) {
-        wireMock.stubFor(post(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)))
+        wireMock.stubFor(post(urlEqualTo(API_VERSION + endpoint))
                 .atPriority(1)
                 .withHeader("Content-Type", containing("application/json"))
                 .withRequestBody(matchingJsonPath(expectedJsonPathField, equalTo(expectedValue)))
-                .willReturn(aResponse()
-                        .withStatus(201)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(responseBodyJson)));
+                .willReturn(jsonResponse(200, responseBodyJson)));
     }
 
     public static void stubUpdateSuccess(WireMockServer wireMock, String endpointWithId, String expectedJsonPathField, String expectedValue, String responseBodyJson) {
-        wireMock.stubFor(post(urlEqualTo(String.format("%s%s", API_VERSION, endpointWithId)))
+        wireMock.stubFor(post(urlEqualTo(API_VERSION + endpointWithId))
                 .withHeader("Content-Type", containing("application/json"))
                 .withRequestBody(matchingJsonPath(expectedJsonPathField, equalTo(expectedValue)))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(responseBodyJson)));
+                .willReturn(jsonResponse(200, responseBodyJson)));
     }
 
     public static void stubGetSuccess(WireMockServer wireMock, String endpointWithId, String responseBodyJson) {
-        wireMock.stubFor(get(urlEqualTo(String.format("%s%s", API_VERSION, endpointWithId)))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(responseBodyJson)));
+        wireMock.stubFor(get(urlEqualTo(API_VERSION + endpointWithId))
+                .willReturn(jsonResponse(200, responseBodyJson)));
     }
 
     public static void stubDeleteSuccess(WireMockServer wireMock, String endpointWithId) {
-        wireMock.stubFor(delete(urlEqualTo(String.format("%s%s", API_VERSION, endpointWithId)))
-                .willReturn(aResponse()
-                        .withStatus(204)));
+        wireMock.stubFor(delete(urlEqualTo(API_VERSION + endpointWithId))
+                .willReturn(aResponse().withStatus(204)));
     }
 
     public static void stubPostNoContent(WireMockServer wireMock, String endpoint) {
-        wireMock.stubFor(post(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)))
-                .willReturn(aResponse()
-                        .withStatus(204)));
+        wireMock.stubFor(post(urlEqualTo(API_VERSION + endpoint))
+                .willReturn(aResponse().withStatus(204)));
     }
 
     public static void stubUnauthorizedMissingToken(WireMockServer wireMock, String method, String endpoint) {
-        var mappingBuilder = switch (method.toUpperCase()) {
-            case "POST" -> post(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-            case "GET" -> get(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-            case "DELETE" -> delete(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-            default -> any(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-        };
-
-        wireMock.stubFor(mappingBuilder
-                .withHeader("Authorization", absent())
-                .willReturn(aResponse()
-                        .withStatus(401)
-                        .withBody("{\"error\": \"Unauthorized\"}")));
+        stubUnauthorized(wireMock, method, endpoint, absent());
     }
 
     public static void stubUnauthorizedInvalidToken(WireMockServer wireMock, String method, String endpoint, String invalidToken) {
-        var mappingBuilder = switch (method.toUpperCase()) {
-            case "POST" -> post(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-            case "GET" -> get(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-            case "DELETE" -> delete(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-            default -> any(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-        };
-
-        wireMock.stubFor(mappingBuilder
-                .withHeader("Authorization", equalTo("Bearer " + invalidToken))
-                .willReturn(aResponse()
-                        .withStatus(401)
-                        .withBody("{\"error\": \"Unauthorized\"}")));
+        stubUnauthorized(wireMock, method, endpoint, equalTo("Bearer " + invalidToken));
     }
 
     public static void stubBadRequest(WireMockServer wireMock, String method, String endpoint,
                                       String expectedJsonPathField, String expectedValue, String responseBodyJson) {
-        var mappingBuilder = switch (method.toUpperCase()) {
-            case "POST" -> post(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)))
-                    .withRequestBody(matchingJsonPath(expectedJsonPathField, equalTo(expectedValue)));
-            default -> any(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)));
-        };
-
-        wireMock.stubFor(mappingBuilder
-                .willReturn(aResponse()
-                        .withStatus(400)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(responseBodyJson)));
+        MappingBuilder mapping = mapping(method, endpoint);
+        if ("POST".equalsIgnoreCase(method)) {
+            mapping = mapping.withRequestBody(matchingJsonPath(expectedJsonPathField, equalTo(expectedValue)));
+        }
+        wireMock.stubFor(mapping.willReturn(jsonResponse(400, responseBodyJson)));
     }
 
     public static void stubNotFound(WireMockServer wireMock, String method, String endpointWithId) {
-        var mappingBuilder = switch (method.toUpperCase()) {
-            case "GET" -> get(urlEqualTo(String.format("%s%s", API_VERSION, endpointWithId)));
-            case "DELETE" -> delete(urlEqualTo(String.format("%s%s", API_VERSION, endpointWithId)));
-            default -> any(urlEqualTo(String.format("%s%s", API_VERSION, endpointWithId)));
-        };
-
-        wireMock.stubFor(mappingBuilder
+        wireMock.stubFor(mapping(method, endpointWithId)
                 .willReturn(aResponse()
                         .withStatus(404)
                         .withBody("{\"error\": \"Resource not found\"}")));
     }
 
-    public static void stubPostSuccess(WireMockServer wireMock, String endpoint, Map<String, String> expectedJsonPathFields, String responseBodyJson) {
-        var mappingBuilder = post(urlEqualTo(String.format("%s%s", API_VERSION, endpoint)))
-                .atPriority(1)
-                .withHeader("Content-Type", containing("application/json"));
-
-        for (var entry : expectedJsonPathFields.entrySet()) {
-            mappingBuilder = mappingBuilder.withRequestBody(matchingJsonPath(entry.getKey(), equalTo(entry.getValue())));
-        }
-
-        wireMock.stubFor(mappingBuilder
+    private static void stubUnauthorized(WireMockServer wireMock, String method, String endpoint,
+                                         StringValuePattern authorizationHeader) {
+        wireMock.stubFor(mapping(method, endpoint)
+                .withHeader("Authorization", authorizationHeader)
                 .willReturn(aResponse()
-                        .withStatus(201)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(responseBodyJson)));
+                        .withStatus(401)
+                        .withBody("{\"error\": \"Unauthorized\"}")));
+    }
+
+    private static MappingBuilder mapping(String method, String endpoint) {
+        var url = urlEqualTo(API_VERSION + endpoint);
+        return switch (method.toUpperCase()) {
+            case "POST" -> post(url);
+            case "GET" -> get(url);
+            case "DELETE" -> delete(url);
+            default -> any(url);
+        };
+    }
+
+    private static ResponseDefinitionBuilder jsonResponse(int status, String body) {
+        return aResponse()
+                .withStatus(status)
+                .withHeader("Content-Type", "application/json")
+                .withBody(body);
     }
 }
